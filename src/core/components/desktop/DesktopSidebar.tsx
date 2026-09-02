@@ -128,6 +128,7 @@ export function DesktopSidebar({
               const isActive = activeModule === item.id;
               return (
                 <button
+                  type="button"
                   key={item.id}
                   className={`rarus-nav-item ${isActive ? 'active' : ''}`}
                   onClick={() => onSelectModule(item.id)}
