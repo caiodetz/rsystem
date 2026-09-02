@@ -89,3 +89,17 @@ Plano completo de engenharia e implementação para o sistema **RARUS Tecnologia
 - [x] **Task 8.1:** Atualizar as rotas `/api/v1/*` para contemplar estoque, relatos, transferências e múltiplos equipamentos.
 - [x] **Task 8.2:** Atualizar a especificação OpenAPI 3.0 no Swagger UI.
 - [x] **Task 8.3:** Build de produção e validação de ponta a ponta.
+
+---
+
+### FASE 9: Re-Design Visual Completo (Design System & Telas Reais da Pasta Exemplos Imgs)
+- [x] **Task 9.1:** Aplicar tokens oficiais de cor (`--color-primary-500: #2563EB;`, `--color-bg-app: #F4F5F7;`, `--color-bg-surface: #FFFFFF;`, etc.) e grid de 12 colunas conforme `exemplos/Design_System_Especificacao.md`.
+- [x] **Task 9.2:** Implementar arquitetura de Card Form Modal com abas, action bar e footer de auditoria de `exemplos/gemini-code-1788366369820.html`.
+- [x] **Task 9.3:** Corrigir overflow e rolagem dupla em toda a aplicação (`rarus-workstation-root` com `height: 100vh; overflow: hidden;` e `rarus-content-scroll` limpo).
+- [x] **Task 9.4:** Re-desenhar Módulo de Clientes com abas (1-Identificação, 2-Endereço, 3-Observações, 4-Tributação, 5-Confidencial, 6-Equipamentos) de `formulário de cadastro de cliente.jpeg`.
+- [x] **Task 9.5:** Re-desenhar Módulo de Ordens de Serviço com tabela de `tabela de os.jpeg`, 14 status oficiais e formulário de `aba 5 do formulario de abertuda de uma OS.jpeg` com painel de mensagens rápidas.
+- [x] **Task 9.6:** Re-desenhar Módulo de Equipamentos com campos complementares (lacre anterior/novo, selo anterior/novo, portaria) de `aba 2 do formulário de cadastro de um equipamento.jpeg`.
+- [x] **Task 9.7:** Re-desenhar Módulo de Estoque com ficha de transferência de `forumalãrio de tranferencia de estoque.jpeg` (peças reais: PCI G610i/G650i, células Zemig, cabos flat) e modal de contagem de `Formulãrio de contagem de estoque.jpeg`.
+- [x] **Task 9.8:** Re-desenhar Módulo de Funcionários (Caio Detz - Auxiliar Técnico, código 058) de `exemplo de cadastro de funcionario preenchido.jpeg`.
+- [x] **Task 9.9:** Ajustar KPI Cards com display 28px bold, TopBar com perfil Caio Detz e alternador claro/escuro.
+- [x] **Task 9.10:** Validação de build com `npm run build` (código 0, 22 páginas estáticas e dinâmicas geradas com sucesso).

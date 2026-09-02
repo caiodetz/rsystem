@@ -81,8 +81,8 @@ export const DashboardView: React.FC = () => {
             </div>
           </div>
           <button
-            className="btn-primary-rarus"
-            style={{ backgroundColor: 'var(--rarus-danger)', whiteSpace: 'nowrap' }}
+            className="btn btn-primary"
+            style={{ backgroundColor: 'var(--status-danger-text)', whiteSpace: 'nowrap' }}
             onClick={() =>
               openTab({
                 id: 'tab-padroes',
@@ -157,14 +157,14 @@ export const DashboardView: React.FC = () => {
               alignItems: 'center',
               justifyContent: 'space-between',
               padding: '14px 18px',
-              borderBottom: '1px solid var(--border-subtle)',
+              borderBottom: '1px solid var(--color-border-subtle)',
             }}
           >
-            <h3 style={{ margin: 0, fontSize: '15px', fontWeight: 700 }}>
+            <h3 style={{ margin: 0, fontSize: '15px', fontWeight: 600 }}>
               Ordens de Serviço em Andamento
             </h3>
             <button
-              className="btn-secondary-rarus"
+              className="btn btn-secondary"
               style={{ fontSize: '12px', padding: '4px 10px' }}
               onClick={() =>
                 openTab({
@@ -194,13 +194,13 @@ export const DashboardView: React.FC = () => {
               {MOCK_ORDENS_SERVICO.map((os) => (
                 <tr key={os.id}>
                   <td>
-                    <strong style={{ color: 'var(--rarus-navy)' }}>#{os.numero}</strong>
+                    <strong style={{ color: 'var(--color-primary-500)' }}>#{os.numero}</strong>
                   </td>
                   <td>{os.clienteNome}</td>
                   <td style={{ fontSize: '12px' }}>{os.tipo}</td>
                   <td>{os.tecnicoNome}</td>
                   <td>
-                    <span className="rarus-status-pill status-alerta">
+                    <span className="status-badge pendente">
                       <span className="rarus-status-dot" />
                       {os.status}
                     </span>

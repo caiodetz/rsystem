@@ -90,7 +90,7 @@ export const PadroesView: React.FC = () => {
             Rastreabilidade RBC, controle de validade em 4 escalas (90d, 60d, 30d crítico e bloqueio de uso)
           </p>
         </div>
-        <button className="btn-primary-rarus" onClick={() => setModalNovo(true)} type="button">
+        <button className="btn btn-primary" onClick={() => setModalNovo(true)} type="button">
           <Plus size={15} />
           <span>Cadastrar Padrão Basal</span>
         </button>
@@ -386,12 +386,12 @@ export const PadroesView: React.FC = () => {
               <div className="rarus-modal-footer">
                 <button
                   type="button"
-                  className="btn-secondary-rarus"
+                  className="btn btn-secondary"
                   onClick={() => setModalNovo(false)}
                 >
                   Cancelar
                 </button>
-                <button type="submit" className="btn-primary-rarus">
+                <button type="submit" className="btn btn-primary">
                   Cadastrar Padrão Basal
                 </button>
               </div>

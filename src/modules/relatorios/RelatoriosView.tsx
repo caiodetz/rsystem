@@ -78,11 +78,11 @@ export const RelatoriosView: React.FC = () => {
         </div>
 
         <div style={{ display: 'flex', gap: '8px' }}>
-          <button className="btn-secondary-rarus" onClick={handleExportCSV} disabled={!relatorio}>
+          <button className="btn btn-secondary" onClick={handleExportCSV} disabled={!relatorio}>
             <Download size={14} />
             <span>Exportar Planilha (CSV)</span>
           </button>
-          <button className="btn-primary-rarus" onClick={() => window.print()} disabled={!relatorio}>
+          <button className="btn btn-primary" onClick={() => window.print()} disabled={!relatorio}>
             <Printer size={14} />
             <span>Imprimir Relatório</span>
           </button>

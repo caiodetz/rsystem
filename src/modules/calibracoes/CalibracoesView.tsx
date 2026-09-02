@@ -144,12 +144,12 @@ export const CalibracoesView: React.FC = () => {
         </div>
         <div style={{ display: 'flex', gap: 10 }}>
           {selecionado && (
-            <button className="btn-secondary-rarus" onClick={() => window.print()} type="button">
+            <button className="btn btn-secondary" onClick={() => window.print()} type="button">
               <Printer size={15} />
               <span>Imprimir Certificado</span>
             </button>
           )}
-          <button className="btn-primary-rarus" onClick={() => setModalNovaCalibracao(true)} type="button">
+          <button className="btn btn-primary" onClick={() => setModalNovaCalibracao(true)} type="button">
             <Plus size={15} />
             <span>Executar Calibração & Emitir</span>
           </button>
@@ -380,12 +380,12 @@ export const CalibracoesView: React.FC = () => {
               <div className="rarus-modal-footer">
                 <button
                   type="button"
-                  className="btn-secondary-rarus"
+                  className="btn btn-secondary"
                   onClick={() => setModalNovaCalibracao(false)}
                 >
                   Cancelar
                 </button>
-                <button type="submit" className="btn-primary-rarus">
+                <button type="submit" className="btn btn-primary">
                   Assinar & Emitir Certificado
                 </button>
               </div>

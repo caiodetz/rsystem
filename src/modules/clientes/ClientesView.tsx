@@ -1,32 +1,23 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Cliente, Equipamento, OrdemServico, CertificadoCalibracao } from '@/core/types';
+import { Cliente, Equipamento } from '@/core/types';
 import { ClientesService } from '@/core/services/clientesService';
 import { EquipamentosService } from '@/core/services/equipamentosService';
-import { OrdensServicoService } from '@/core/services/ordensServicoService';
-import { RelatosService } from '@/core/services/relatosService';
 import {
   Users,
   Plus,
   Search,
-  Building,
-  Mail,
-  Phone,
-  MapPin,
-  X,
-  ChevronRight,
+  Save,
+  Printer,
+  Trash2,
   ArrowLeft,
   Wrench,
-  ClipboardList,
   Award,
-  History,
-  DollarSign,
+  ClipboardList,
+  Building,
   CheckCircle2,
-  AlertTriangle,
-  FileText,
   Calendar,
-  ExternalLink,
 } from 'lucide-react';
 
 export const ClientesView: React.FC = () => {
@@ -35,37 +26,54 @@ export const ClientesView: React.FC = () => {
   const [segmentoFiltro, setSegmentoFiltro] = useState<string>('todos');
   const [clienteSelecionado, setClienteSelecionado] = useState<Cliente | null>(null);
 
-  // Sub-abas do Perfil 360
-  const [aba360, setAba360] = useState<'equipamentos' | 'os' | 'certificados' | 'historico' | 'faturamento'>('equipamentos');
+  // Aba ativa do formulário card
+  const [abaForm, setAbaForm] = useState<
+    'identificacao' | 'endereco' | 'observacoes' | 'tributacao' | 'confidencial' | 'equipamentos'
+  >('identificacao');
 
-  // Dados do cliente selecionado
+  // Equipamentos do cliente selecionado
   const [equipamentosCliente, setEquipamentosCliente] = useState<Equipamento[]>([]);
-  const [osCliente, setOsCliente] = useState<OrdemServico[]>([]);
-  const [certificadosCliente, setCertificadosCliente] = useState<CertificadoCalibracao[]>([]);
 
-  // Modais
-  const [modalNovoCliente, setModalNovoCliente] = useState(false);
+  // Form State
+  const [formCodigo, setFormCodigo] = useState('C03709');
+  const [formTipoPessoa, setFormTipoPessoa] = useState('Jurídica');
+  const [formCnpj, setFormCnpj] = useState('');
+  const [formRazaoSocial, setFormRazaoSocial] = useState('');
+  const [formNomeFantasia, setFormNomeFantasia] = useState('');
+  const [formInscEstadual, setFormInscEstadual] = useState('');
+  const [formInscMunicipal, setFormInscMunicipal] = useState('');
+  const [formDataCadastro, setFormDataCadastro] = useState('2026-09-02');
+  const [formTelefone1, setFormTelefone1] = useState('');
+  const [formTelefone2, setFormTelefone2] = useState('');
+  const [formEmail, setFormEmail] = useState('');
+  const [formTipoCliente, setFormTipoCliente] = useState('Agronegócio / Grãos');
+  const [formRamoAtividade, setFormRamoAtividade] = useState('Armazenamento e Beneficiamento de Grãos');
+  const [formRegiao, setFormRegiao] = useState('Centro-Oeste / Vale do Paranapanema');
+  const [formRenasem, setFormRenasem] = useState('');
+  const [formAtivo, setFormAtivo] = useState(true);
+
+  // Endereço
+  const [formCep, setFormCep] = useState('');
+  const [formLogradouro, setFormLogradouro] = useState('');
+  const [formNumero, setFormNumero] = useState('');
+  const [formComplemento, setFormComplemento] = useState('');
+  const [formBairro, setFormBairro] = useState('');
+  const [formCidade, setFormCidade] = useState('');
+  const [formUf, setFormUf] = useState('SP');
+
+  // Observações
+  const [formObs, setFormObs] = useState('');
+
+  // Tributação
+  const [formIndicadorIe, setFormIndicadorIe] = useState('1 - Contribuinte ICMS');
+  const [formRegimeTributario, setFormRegimeTributario] = useState('1 - Simples Nacional');
+
+  // Modal Novo Equipamento Vinculado
   const [modalNovoEquipamento, setModalNovoEquipamento] = useState(false);
-
-  // Form novo cliente
-  const [novoRazaoSocial, setNovoRazaoSocial] = useState('');
-  const [novoNomeFantasia, setNovoNomeFantasia] = useState('');
-  const [novoCnpj, setNovoCnpj] = useState('');
-  const [novoEmail, setNovoEmail] = useState('');
-  const [novoTelefone, setNovoTelefone] = useState('');
-  const [novoCidade, setNovoCidade] = useState('');
-  const [novoEstado, setNovoEstado] = useState('SP');
-  const [novoSegmento, setNovoSegmento] = useState('Agronegócio / Grãos');
-  const [novoObs, setNovoObs] = useState('');
-
-  // Form novo equipamento para o cliente
   const [eqModelo, setEqModelo] = useState('G650i');
   const [eqFabricante, setEqFabricante] = useState('GEHAKA');
-  const [eqTipo, setEqTipo] = useState('Medidor de Umidade GEHAKA');
   const [eqSerie, setEqSerie] = useState('');
   const [eqPatrimonio, setEqPatrimonio] = useState('');
-  const [eqFaixa, setEqFaixa] = useState('8 a 50 %');
-  const [eqResolucao, setEqResolucao] = useState('0,1 %');
   const [eqLacreNovo, setEqLacreNovo] = useState('');
   const [eqSeloNovo, setEqSeloNovo] = useState('');
 
@@ -75,7 +83,8 @@ export const ClientesView: React.FC = () => {
 
   useEffect(() => {
     if (clienteSelecionado) {
-      carregarDadosCliente(clienteSelecionado.id);
+      preencherForm(clienteSelecionado);
+      carregarEquipamentos(clienteSelecionado.id);
     }
   }, [clienteSelecionado]);
 
@@ -87,50 +96,101 @@ export const ClientesView: React.FC = () => {
     setClientes(itens);
   };
 
-  const carregarDadosCliente = async (clienteId: string) => {
+  const carregarEquipamentos = async (clienteId: string) => {
     const eqs = await EquipamentosService.listar({ clienteId });
     setEquipamentosCliente(eqs);
-
-    const ords = await OrdensServicoService.listar({ clienteId });
-    setOsCliente(ords);
-
-    const certs = await RelatosService.listarCertificados();
-    setCertificadosCliente(certs.filter((c) => c.clienteId === clienteId));
   };
 
-  const handleSalvarCliente = async (e: React.FormEvent) => {
+  const preencherForm = (c: Cliente) => {
+    setFormCodigo(c.codigo || 'C03709');
+    setFormRazaoSocial(c.razaoSocial);
+    setFormNomeFantasia(c.nomeFantasia);
+    setFormCnpj(c.cnpj);
+    setFormEmail(c.email);
+    setFormTelefone1(c.telefone);
+    setFormTelefone2(c.telefone);
+    setFormLogradouro(c.endereco || 'Planta Industrial');
+    setFormCidade(c.cidade);
+    setFormUf(c.estado);
+    setFormCep(c.cep || '14000-000');
+    setFormTipoCliente(c.segmento);
+    setFormObs(c.observacoesAvulsas || '');
+    setFormAtivo(c.status === 'Ativo');
+  };
+
+  const handleAbrirNovo = () => {
+    const novoCodigo = `C${String(clientes.length + 1).padStart(5, '0')}`;
+    setFormCodigo(novoCodigo);
+    setFormRazaoSocial('');
+    setFormNomeFantasia('');
+    setFormCnpj('');
+    setFormEmail('');
+    setFormTelefone1('');
+    setFormTelefone2('');
+    setFormLogradouro('');
+    setFormNumero('');
+    setFormComplemento('');
+    setFormBairro('');
+    setFormCidade('');
+    setFormUf('SP');
+    setFormCep('');
+    setFormObs('');
+    setEquipamentosCliente([]);
+    setClienteSelecionado({
+      id: `cli-${Date.now()}`,
+      codigo: novoCodigo,
+      razaoSocial: '',
+      nomeFantasia: '',
+      cnpj: '',
+      email: '',
+      telefone: '',
+      endereco: '',
+      cidade: '',
+      estado: 'SP',
+      cep: '',
+      contatos: [],
+      contatoResponsavel: 'Gerente da Qualidade',
+      segmento: 'Agronegócio / Grãos',
+      observacoesAvulsas: '',
+      status: 'Ativo',
+    });
+    setAbaForm('identificacao');
+  };
+
+  const handleSalvar = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!novoRazaoSocial || !novoCnpj) return;
+    if (!formRazaoSocial || !formCnpj) {
+      alert('Preencha os campos obrigatórios: Razão Social e CNPJ/CPF');
+      return;
+    }
 
     await ClientesService.criar({
-      codigo: `CLI-${String(clientes.length + 1).padStart(3, '0')}`,
-      razaoSocial: novoRazaoSocial,
-      nomeFantasia: novoNomeFantasia || novoRazaoSocial,
-      cnpj: novoCnpj,
-      email: novoEmail,
-      telefone: novoTelefone,
-      endereco: 'Planta Industrial',
-      cidade: novoCidade || 'São Paulo',
-      estado: novoEstado,
-      cep: '00000-000',
+      codigo: formCodigo,
+      razaoSocial: formRazaoSocial,
+      nomeFantasia: formNomeFantasia || formRazaoSocial,
+      cnpj: formCnpj,
+      email: formEmail,
+      telefone: formTelefone1,
+      endereco: `${formLogradouro}, ${formNumero}`,
+      cidade: formCidade || 'São Paulo',
+      estado: formUf,
+      cep: formCep,
       contatos: [
         {
           id: `cnt-${Date.now()}`,
           nome: 'Gerente da Qualidade',
           cargo: 'Gerente de Planta',
-          email: novoEmail,
-          telefone: novoTelefone,
+          email: formEmail,
+          telefone: formTelefone1,
         },
       ],
       contatoResponsavel: 'Gerente da Qualidade',
-      segmento: novoSegmento,
-      observacoesAvulsas: novoObs,
-      status: 'Ativo',
+      segmento: formTipoCliente,
+      observacoesAvulsas: formObs,
+      status: formAtivo ? 'Ativo' : 'Inativo',
     });
 
-    setModalNovoCliente(false);
-    setNovoRazaoSocial('');
-    setNovoCnpj('');
+    alert('Cliente salvo com sucesso!');
     carregarClientes();
   };
 
@@ -140,20 +200,20 @@ export const ClientesView: React.FC = () => {
 
     await EquipamentosService.criar({
       clienteId: clienteSelecionado.id,
-      clienteNome: clienteSelecionado.nomeFantasia,
+      clienteNome: clienteSelecionado.nomeFantasia || formRazaoSocial,
       numeroSerie: eqSerie,
       fabricante: eqFabricante,
       modelo: eqModelo,
-      tipoEquipamento: eqTipo,
-      faixaMedicao: eqFaixa,
-      resolucao: eqResolucao,
+      tipoEquipamento: 'Medidor de Umidade GEHAKA',
+      faixaMedicao: '8 a 50 %',
+      resolucao: '0,1 %',
       patrimonio: eqPatrimonio,
       lacreNovo: eqLacreNovo,
       seloNovo: eqSeloNovo,
       dataUltimaCalibracao: new Date().toISOString().split('T')[0],
       dataProximaCalibracao: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
       status: 'Calibrado',
-      observacoes: 'Cadastrado diretamente pelo perfil 360º do cliente',
+      observacoes: 'Cadastrado diretamente pela ficha de cliente',
     });
 
     setModalNovoEquipamento(false);
@@ -161,152 +221,461 @@ export const ClientesView: React.FC = () => {
     setEqPatrimonio('');
     setEqLacreNovo('');
     setEqSeloNovo('');
-    carregarDadosCliente(clienteSelecionado.id);
+    carregarEquipamentos(clienteSelecionado.id);
   };
 
-  // Se um cliente está selecionado, exibe a Visão 360º estilo `cliente exemplo.webp`
+  // Se um cliente está aberto no formulário, exibe o Card Form fiel ao gemini-code-1788366369820.html
   if (clienteSelecionado) {
     return (
       <div className="rarus-content-scroll">
         {/* Barra de Voltar */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           <button
-            className="btn-secondary-rarus"
+            className="btn btn-secondary"
             onClick={() => setClienteSelecionado(null)}
-            style={{ padding: '6px 12px', fontSize: '12px' }}
+            type="button"
           >
             <ArrowLeft size={14} />
             <span>Voltar para Lista de Clientes</span>
           </button>
         </div>
 
-        {/* Layout Perfil 360º do Cliente */}
-        <div className="rarus-client-360-container">
-          {/* Coluna Principal (Esquerda) */}
-          <div className="rarus-client-main-col">
-            {/* Card de Identidade do Cliente */}
-            <div className="rarus-client-header-card">
-              <div className="rarus-client-identity">
-                <div className="rarus-client-avatar-large">
-                  {clienteSelecionado.nomeFantasia.substring(0, 2).toUpperCase()}
+        {/* CONTAINER CARD FORMULÁRIO (PADRÃO ESPECIFICAÇÃO & GEMINI-CODE) */}
+        <div className="card-container">
+          {/* Cabeçalho do Card */}
+          <div className="card-header">
+            <h2 className="card-title">
+              Cadastro de Cliente / Fornecedor {formNomeFantasia ? `— ${formNomeFantasia}` : ''}
+            </h2>
+            <span className={`status-badge ${formAtivo ? 'ativo' : 'inativo'}`}>
+              <span className="rarus-status-dot" />
+              {formAtivo ? 'Ativo' : 'Inativo'}
+            </span>
+          </div>
+
+          {/* Barra de Ações (Action Bar) */}
+          <div className="action-bar">
+            <button className="btn btn-primary" onClick={handleAbrirNovo} type="button">
+              <Plus size={14} />
+              <span>Novo</span>
+            </button>
+            <button className="btn btn-secondary" onClick={handleSalvar} type="button">
+              <Save size={14} />
+              <span>Salvar</span>
+            </button>
+            <button className="btn btn-secondary" onClick={() => setClienteSelecionado(null)} type="button">
+              <Search size={14} />
+              <span>Buscar</span>
+            </button>
+            <button className="btn btn-secondary" onClick={() => window.print()} type="button">
+              <Printer size={14} />
+              <span>Imprimir</span>
+            </button>
+            <button
+              className="btn btn-danger"
+              onClick={() => {
+                if (confirm('Deseja realmente inativar este cliente?')) {
+                  setFormAtivo(false);
+                }
+              }}
+              type="button"
+            >
+              <Trash2 size={14} />
+              <span>Excluir</span>
+            </button>
+          </div>
+
+          {/* Navegação por Abas */}
+          <div className="tabs-navigation">
+            <button
+              className={`tab-button ${abaForm === 'identificacao' ? 'active' : ''}`}
+              onClick={() => setAbaForm('identificacao')}
+              type="button"
+            >
+              1. Identificação
+            </button>
+            <button
+              className={`tab-button ${abaForm === 'endereco' ? 'active' : ''}`}
+              onClick={() => setAbaForm('endereco')}
+              type="button"
+            >
+              2. Endereço
+            </button>
+            <button
+              className={`tab-button ${abaForm === 'observacoes' ? 'active' : ''}`}
+              onClick={() => setAbaForm('observacoes')}
+              type="button"
+            >
+              3. Observações
+            </button>
+            <button
+              className={`tab-button ${abaForm === 'tributacao' ? 'active' : ''}`}
+              onClick={() => setAbaForm('tributacao')}
+              type="button"
+            >
+              4. Tributação
+            </button>
+            <button
+              className={`tab-button ${abaForm === 'confidencial' ? 'active' : ''}`}
+              onClick={() => setAbaForm('confidencial')}
+              type="button"
+            >
+              5. Confidencial
+            </button>
+            <button
+              className={`tab-button ${abaForm === 'equipamentos' ? 'active' : ''}`}
+              onClick={() => setAbaForm('equipamentos')}
+              type="button"
+            >
+              6. Tabelas / Equipamentos ({equipamentosCliente.length})
+            </button>
+          </div>
+
+          {/* Corpo do Formulário */}
+          <div className="card-body">
+            {/* Aba 1: Identificação */}
+            {abaForm === 'identificacao' && (
+              <div className="form-grid">
+                <div className="form-group col-2">
+                  <label className="form-label">Código</label>
+                  <input type="text" className="form-input" value={formCodigo} readOnly />
                 </div>
-                <div className="rarus-client-info-names" style={{ flex: 1 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <h2>{clienteSelecionado.nomeFantasia}</h2>
-                    <span className="rarus-status-pill status-ativo">
-                      <span className="rarus-status-dot" />
-                      {clienteSelecionado.status}
-                    </span>
-                    <span
-                      style={{
-                        fontSize: '11px',
-                        background: 'var(--rarus-cyan-light)',
-                        color: 'var(--rarus-navy)',
-                        padding: '2px 8px',
-                        borderRadius: 4,
-                        fontWeight: 600,
-                      }}
-                    >
-                      {clienteSelecionado.segmento}
-                    </span>
+
+                <div className="form-group col-4">
+                  <label className="form-label">Tipo de Pessoa</label>
+                  <select
+                    className="form-select"
+                    value={formTipoPessoa}
+                    onChange={(e) => setFormTipoPessoa(e.target.value)}
+                  >
+                    <option value="Jurídica">Jurídica</option>
+                    <option value="Física">Física</option>
+                  </select>
+                </div>
+
+                <div className="form-group col-6">
+                  <label className="form-label">CNPJ / CPF *</label>
+                  <input
+                    type="text"
+                    className="form-input"
+                    placeholder="00.000.000/0000-00"
+                    value={formCnpj}
+                    onChange={(e) => setFormCnpj(e.target.value)}
+                    required
+                  />
+                </div>
+
+                <div className="form-group col-6">
+                  <label className="form-label">Nome / Razão Social *</label>
+                  <input
+                    type="text"
+                    className="form-input"
+                    placeholder="Razão social completa"
+                    value={formRazaoSocial}
+                    onChange={(e) => setFormRazaoSocial(e.target.value)}
+                    required
+                  />
+                </div>
+
+                <div className="form-group col-6">
+                  <label className="form-label">Apelido / Nome Fantasia</label>
+                  <input
+                    type="text"
+                    className="form-input"
+                    placeholder="Nome comercial da unidade"
+                    value={formNomeFantasia}
+                    onChange={(e) => setFormNomeFantasia(e.target.value)}
+                  />
+                </div>
+
+                <div className="form-group col-4">
+                  <label className="form-label">Inscrição Estadual</label>
+                  <input
+                    type="text"
+                    className="form-input"
+                    value={formInscEstadual}
+                    onChange={(e) => setFormInscEstadual(e.target.value)}
+                  />
+                </div>
+
+                <div className="form-group col-4">
+                  <label className="form-label">Inscrição Municipal</label>
+                  <input
+                    type="text"
+                    className="form-input"
+                    value={formInscMunicipal}
+                    onChange={(e) => setFormInscMunicipal(e.target.value)}
+                  />
+                </div>
+
+                <div className="form-group col-4">
+                  <label className="form-label">Data de Cadastro</label>
+                  <input
+                    type="date"
+                    className="form-input"
+                    value={formDataCadastro}
+                    onChange={(e) => setFormDataCadastro(e.target.value)}
+                  />
+                </div>
+
+                <div className="form-group col-4">
+                  <label className="form-label">Telefone 1</label>
+                  <input
+                    type="text"
+                    className="form-input"
+                    placeholder="(00) 0000-0000"
+                    value={formTelefone1}
+                    onChange={(e) => setFormTelefone1(e.target.value)}
+                  />
+                </div>
+
+                <div className="form-group col-4">
+                  <label className="form-label">Celular / WhatsApp</label>
+                  <input
+                    type="text"
+                    className="form-input"
+                    placeholder="(00) 00000-0000"
+                    value={formTelefone2}
+                    onChange={(e) => setFormTelefone2(e.target.value)}
+                  />
+                </div>
+
+                <div className="form-group col-4">
+                  <label className="form-label">E-mail Principal</label>
+                  <input
+                    type="email"
+                    className="form-input"
+                    placeholder="qualidade@empresa.com.br"
+                    value={formEmail}
+                    onChange={(e) => setFormEmail(e.target.value)}
+                  />
+                </div>
+
+                <div className="form-group col-4">
+                  <label className="form-label">Tipo de Cliente</label>
+                  <select
+                    className="form-select"
+                    value={formTipoCliente}
+                    onChange={(e) => setFormTipoCliente(e.target.value)}
+                  >
+                    <option value="Agronegócio / Grãos">Agronegócio / Grãos</option>
+                    <option value="Farmacêutico / Laboratório">Farmacêutico / Laboratório</option>
+                    <option value="Alimentos / Moagem">Alimentos / Moagem</option>
+                    <option value="Químico">Químico</option>
+                  </select>
+                </div>
+
+                <div className="form-group col-4">
+                  <label className="form-label">Ramo de Atividade / Profissão</label>
+                  <input
+                    type="text"
+                    className="form-input"
+                    value={formRamoAtividade}
+                    onChange={(e) => setFormRamoAtividade(e.target.value)}
+                  />
+                </div>
+
+                <div className="form-group col-4">
+                  <label className="form-label">Região</label>
+                  <input
+                    type="text"
+                    className="form-input"
+                    value={formRegiao}
+                    onChange={(e) => setFormRegiao(e.target.value)}
+                  />
+                </div>
+
+                <div className="form-group col-6">
+                  <label className="form-label">Renasem / Indea</label>
+                  <input
+                    type="text"
+                    className="form-input"
+                    placeholder="Registro oficial de sementes"
+                    value={formRenasem}
+                    onChange={(e) => setFormRenasem(e.target.value)}
+                  />
+                </div>
+
+                <div className="form-group col-6">
+                  <label className="form-label">Status do Cadastro</label>
+                  <div className="checkbox-group">
+                    <input
+                      type="checkbox"
+                      id="check-ativo"
+                      checked={formAtivo}
+                      onChange={(e) => setFormAtivo(e.target.checked)}
+                    />
+                    <label htmlFor="check-ativo">Cliente Ativo no Sistema</label>
                   </div>
-                  <p>{clienteSelecionado.razaoSocial} • CNPJ: {clienteSelecionado.cnpj}</p>
                 </div>
               </div>
+            )}
 
-              {/* Barra de Contatos em Linha */}
-              <div className="rarus-client-contacts-bar">
-                <div className="rarus-contact-item">
-                  <Mail size={14} color="var(--rarus-cyan)" />
-                  <span>{clienteSelecionado.email}</span>
+            {/* Aba 2: Endereço */}
+            {abaForm === 'endereco' && (
+              <div className="form-grid">
+                <div className="form-section-title">Endereço Principal / Planta Industrial</div>
+
+                <div className="form-group col-3">
+                  <label className="form-label">CEP</label>
+                  <div className="input-with-icon">
+                    <input
+                      type="text"
+                      className="form-input"
+                      placeholder="00000-000"
+                      value={formCep}
+                      onChange={(e) => setFormCep(e.target.value)}
+                    />
+                    <button className="input-icon-btn" type="button" title="Buscar CEP">
+                      🔍
+                    </button>
+                  </div>
                 </div>
-                <div className="rarus-contact-item">
-                  <Phone size={14} color="var(--rarus-cyan)" />
-                  <span>{clienteSelecionado.telefone}</span>
+
+                <div className="form-group col-7">
+                  <label className="form-label">Rua / Logradouro</label>
+                  <input
+                    type="text"
+                    className="form-input"
+                    value={formLogradouro}
+                    onChange={(e) => setFormLogradouro(e.target.value)}
+                  />
                 </div>
-                <div className="rarus-contact-item">
-                  <Users size={14} color="var(--rarus-cyan)" />
-                  <span>Resp: {clienteSelecionado.contatoResponsavel}</span>
+
+                <div className="form-group col-2">
+                  <label className="form-label">Número</label>
+                  <input
+                    type="text"
+                    className="form-input"
+                    value={formNumero}
+                    onChange={(e) => setFormNumero(e.target.value)}
+                  />
                 </div>
-                <div className="rarus-contact-item">
-                  <MapPin size={14} color="var(--rarus-cyan)" />
-                  <span>{clienteSelecionado.cidade} / {clienteSelecionado.estado}</span>
+
+                <div className="form-group col-4">
+                  <label className="form-label">Complemento</label>
+                  <input
+                    type="text"
+                    className="form-input"
+                    value={formComplemento}
+                    onChange={(e) => setFormComplemento(e.target.value)}
+                  />
+                </div>
+
+                <div className="form-group col-3">
+                  <label className="form-label">Bairro</label>
+                  <input
+                    type="text"
+                    className="form-input"
+                    value={formBairro}
+                    onChange={(e) => setFormBairro(e.target.value)}
+                  />
+                </div>
+
+                <div className="form-group col-3">
+                  <label className="form-label">Cidade</label>
+                  <input
+                    type="text"
+                    className="form-input"
+                    value={formCidade}
+                    onChange={(e) => setFormCidade(e.target.value)}
+                  />
+                </div>
+
+                <div className="form-group col-2">
+                  <label className="form-label">Estado (UF)</label>
+                  <input
+                    type="text"
+                    className="form-input"
+                    value={formUf}
+                    onChange={(e) => setFormUf(e.target.value)}
+                  />
                 </div>
               </div>
+            )}
 
-              {clienteSelecionado.observacoesAvulsas && (
-                <div
-                  style={{
-                    fontSize: '12px',
-                    padding: '8px 12px',
-                    borderRadius: 6,
-                    background: 'var(--bg-app)',
-                    border: '1px solid var(--border-subtle)',
-                    color: 'var(--text-muted)',
-                  }}
-                >
-                  <strong>Observações:</strong> {clienteSelecionado.observacoesAvulsas}
+            {/* Aba 3: Observações */}
+            {abaForm === 'observacoes' && (
+              <div className="form-grid">
+                <div className="form-group col-12">
+                  <label className="form-label">Observações Gerais / Instruções de Acesso</label>
+                  <textarea
+                    className="form-textarea"
+                    rows={6}
+                    placeholder="Instruções de acesso à planta, contatos na portaria, exigências de EPI..."
+                    value={formObs}
+                    onChange={(e) => setFormObs(e.target.value)}
+                  />
                 </div>
-              )}
-            </div>
+              </div>
+            )}
 
-            {/* Abas Internas 360 */}
-            <div className="rarus-client-tabs-nav">
-              <button
-                className={`rarus-client-tab-btn ${aba360 === 'equipamentos' ? 'active' : ''}`}
-                onClick={() => setAba360('equipamentos')}
-              >
-                Equipamentos ({equipamentosCliente.length})
-              </button>
-              <button
-                className={`rarus-client-tab-btn ${aba360 === 'os' ? 'active' : ''}`}
-                onClick={() => setAba360('os')}
-              >
-                Ordens de Serviço ({osCliente.length})
-              </button>
-              <button
-                className={`rarus-client-tab-btn ${aba360 === 'certificados' ? 'active' : ''}`}
-                onClick={() => setAba360('certificados')}
-              >
-                Certificados ({certificadosCliente.length})
-              </button>
-              <button
-                className={`rarus-client-tab-btn ${aba360 === 'historico' ? 'active' : ''}`}
-                onClick={() => setAba360('historico')}
-              >
-                Histórico & Interações
-              </button>
-              <button
-                className={`rarus-client-tab-btn ${aba360 === 'faturamento' ? 'active' : ''}`}
-                onClick={() => setAba360('faturamento')}
-              >
-                Faturamento & Propostas
-              </button>
-            </div>
+            {/* Aba 4: Tributação */}
+            {abaForm === 'tributacao' && (
+              <div className="form-grid">
+                <div className="form-group col-6">
+                  <label className="form-label">Indicador de Inscrição Estadual</label>
+                  <select
+                    className="form-select"
+                    value={formIndicadorIe}
+                    onChange={(e) => setFormIndicadorIe(e.target.value)}
+                  >
+                    <option value="1 - Contribuinte ICMS">1 - Contribuinte ICMS</option>
+                    <option value="2 - Contribuinte Isento">2 - Contribuinte Isento</option>
+                    <option value="9 - Não Contribuinte">9 - Não Contribuinte</option>
+                  </select>
+                </div>
 
-            {/* Conteúdo da Aba Equipamentos */}
-            {aba360 === 'equipamentos' && (
-              <div className="rarus-datagrid-container">
+                <div className="form-group col-6">
+                  <label className="form-label">Regime Tributário</label>
+                  <select
+                    className="form-select"
+                    value={formRegimeTributario}
+                    onChange={(e) => setFormRegimeTributario(e.target.value)}
+                  >
+                    <option value="1 - Simples Nacional">1 - Simples Nacional</option>
+                    <option value="2 - Lucro Presumido">2 - Lucro Presumido</option>
+                    <option value="3 - Lucro Real">3 - Lucro Real</option>
+                  </select>
+                </div>
+              </div>
+            )}
+
+            {/* Aba 5: Confidencial */}
+            {abaForm === 'confidencial' && (
+              <div className="form-grid">
+                <div className="form-group col-6">
+                  <label className="form-label">Condição de Pagamento Padrão</label>
+                  <input type="text" className="form-input" defaultValue="28 DDL (Safra)" />
+                </div>
+                <div className="form-group col-6">
+                  <label className="form-label">Limite de Crédito Liberado (R$)</label>
+                  <input type="text" className="form-input" defaultValue="50.000,00" />
+                </div>
+              </div>
+            )}
+
+            {/* Aba 6: Equipamentos do Cliente */}
+            {abaForm === 'equipamentos' && (
+              <div>
                 <div
                   style={{
                     display: 'flex',
-                    alignItems: 'center',
                     justifyContent: 'space-between',
-                    padding: '14px 18px',
-                    borderBottom: '1px solid var(--border-subtle)',
+                    alignItems: 'center',
+                    marginBottom: 12,
                   }}
                 >
-                  <h3 style={{ margin: 0, fontSize: '15px', fontWeight: 700 }}>
-                    Parque de Equipamentos do Cliente
-                  </h3>
+                  <span style={{ fontSize: '13.5px', fontWeight: 600 }}>
+                    Parque Instalado Vinculado a este Cliente ({equipamentosCliente.length})
+                  </span>
                   <button
-                    className="btn-primary-rarus"
-                    onClick={() => setModalNovoEquipamento(true)}
                     type="button"
-                    style={{ fontSize: '12px', padding: '6px 12px' }}
+                    className="btn btn-primary"
+                    onClick={() => setModalNovoEquipamento(true)}
                   >
                     <Plus size={14} />
-                    <span>Novo Equipamento</span>
+                    <span>+ Novo Equipamento</span>
                   </button>
                 </div>
 
@@ -317,8 +686,7 @@ export const ClientesView: React.FC = () => {
                       <th>Nº Série</th>
                       <th>Patrimônio</th>
                       <th>Lacre Novo</th>
-                      <th>Selo Novo</th>
-                      <th>Última Calibração</th>
+                      <th>Selo Inmetro</th>
                       <th>Próxima Calibração</th>
                       <th>Status</th>
                     </tr>
@@ -327,25 +695,20 @@ export const ClientesView: React.FC = () => {
                     {equipamentosCliente.map((eq) => (
                       <tr key={eq.id}>
                         <td>
-                          <div style={{ fontWeight: 600 }}>{eq.modelo}</div>
-                          <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
+                          <strong>{eq.modelo}</strong>
+                          <div style={{ fontSize: '11px', color: 'var(--color-text-muted)' }}>
                             {eq.fabricante} • {eq.tipoEquipamento}
                           </div>
                         </td>
                         <td>
-                          <span style={{ fontFamily: 'monospace', fontWeight: 600 }}>{eq.numeroSerie}</span>
+                          <code>{eq.numeroSerie}</code>
                         </td>
                         <td>{eq.patrimonio || 'S/N'}</td>
                         <td>{eq.lacreNovo || '-'}</td>
                         <td>{eq.seloNovo || '-'}</td>
-                        <td>{eq.dataUltimaCalibracao}</td>
                         <td style={{ fontWeight: 600 }}>{eq.dataProximaCalibracao}</td>
                         <td>
-                          <span
-                            className={`rarus-status-pill ${
-                              eq.status === 'Calibrado' ? 'status-calibrado' : 'status-vencido'
-                            }`}
-                          >
+                          <span className={`status-badge ${eq.status === 'Calibrado' ? 'ativo' : 'inativo'}`}>
                             <span className="rarus-status-dot" />
                             {eq.status}
                           </span>
@@ -356,302 +719,95 @@ export const ClientesView: React.FC = () => {
                 </table>
               </div>
             )}
-
-            {/* Conteúdo da Aba Ordens de Serviço */}
-            {aba360 === 'os' && (
-              <div className="rarus-datagrid-container">
-                <table className="rarus-table">
-                  <thead>
-                    <tr>
-                      <th>Nº OS</th>
-                      <th>Tipo de Serviço</th>
-                      <th>Equipamentos Vinculados</th>
-                      <th>Técnico</th>
-                      <th>Abertura</th>
-                      <th>Previsão</th>
-                      <th>Status</th>
-                      <th>Valor Geral</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {osCliente.map((os) => (
-                      <tr key={os.id}>
-                        <td>
-                          <span style={{ fontWeight: 700, color: 'var(--rarus-cyan)' }}>
-                            #{os.numero}
-                          </span>
-                        </td>
-                        <td>{os.tipo}</td>
-                        <td>
-                          {os.equipamentos.map((e) => e.modelo).join(', ') || '1 Equipamento'}
-                        </td>
-                        <td>{os.tecnicoNome}</td>
-                        <td>{os.dataAbertura}</td>
-                        <td>{os.dataPrevisao}</td>
-                        <td>
-                          <span className="rarus-status-pill status-alerta">
-                            <span className="rarus-status-dot" />
-                            {os.status}
-                          </span>
-                        </td>
-                        <td>
-                          <strong style={{ color: 'var(--rarus-navy)' }}>
-                            R$ {os.valorTotalGeral.toFixed(2)}
-                          </strong>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-
-            {/* Conteúdo da Aba Certificados */}
-            {aba360 === 'certificados' && (
-              <div className="rarus-datagrid-container">
-                <table className="rarus-table">
-                  <thead>
-                    <tr>
-                      <th>Certificado Nº</th>
-                      <th>OS Vinculada</th>
-                      <th>Equipamento</th>
-                      <th>Técnico Executor</th>
-                      <th>Emissão</th>
-                      <th>Validade</th>
-                      <th>Autenticidade (Hash)</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {certificadosCliente.map((c) => (
-                      <tr key={c.id}>
-                        <td>
-                          <strong style={{ color: 'var(--rarus-navy)' }}>{c.numero}</strong>
-                        </td>
-                        <td>#{c.osNumero}</td>
-                        <td>
-                          {c.equipamentoModelo} ({c.equipamentoSerie})
-                        </td>
-                        <td>{c.tecnicoNome}</td>
-                        <td>{c.dataEmissao}</td>
-                        <td style={{ fontWeight: 600 }}>{c.dataValidade}</td>
-                        <td>
-                          <span style={{ fontFamily: 'monospace', fontSize: '11px', color: 'var(--rarus-cyan)' }}>
-                            {c.hashAutenticidade}
-                          </span>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-
-            {/* Conteúdo da Aba Histórico & Timeline */}
-            {aba360 === 'historico' && (
-              <div
-                style={{
-                  background: 'var(--bg-card)',
-                  border: '1px solid var(--border-subtle)',
-                  borderRadius: 'var(--radius-lg)',
-                  padding: '24px',
-                }}
-              >
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
-                  <div style={{ display: 'flex', gap: 12 }}>
-                    <div style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--rarus-cyan)', marginTop: 6 }} />
-                    <div>
-                      <div style={{ fontWeight: 600, fontSize: '13.5px' }}>
-                        OS #1045 iniciada em campo pelo Técnico Itamar Soares
-                      </div>
-                      <div style={{ fontSize: '11.5px', color: 'var(--text-muted)' }}>01/09/2026 às 09:30</div>
-                      <p style={{ margin: '4px 0 0 0', fontSize: '12.5px', color: 'var(--text-main)' }}>
-                        Calibração de 2 medidores de umidade Gehaka e 1 balança de precisão na moega central.
-                      </p>
-                    </div>
-                  </div>
-
-                  <div style={{ display: 'flex', gap: 12 }}>
-                    <div style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--rarus-success)', marginTop: 6 }} />
-                    <div>
-                      <div style={{ fontWeight: 600, fontSize: '13.5px' }}>
-                        Emissão de Certificado de Calibração 1041-1/25
-                      </div>
-                      <div style={{ fontSize: '11.5px', color: 'var(--text-muted)' }}>15/02/2025</div>
-                      <p style={{ margin: '4px 0 0 0', fontSize: '12.5px', color: 'var(--text-main)' }}>
-                        Certificado emitido e assinado digitalmente. Equipamento em conformidade com critérios de safra.
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Conteúdo da Aba Faturamento */}
-            {aba360 === 'faturamento' && (
-              <div
-                style={{
-                  background: 'var(--bg-card)',
-                  border: '1px solid var(--border-subtle)',
-                  borderRadius: 'var(--radius-lg)',
-                  padding: '24px',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: 16,
-                }}
-              >
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span style={{ fontSize: '14px', fontWeight: 600 }}>Total Faturado no Ano:</span>
-                  <span style={{ fontSize: '20px', fontWeight: 800, color: 'var(--rarus-navy)' }}>
-                    R$ 14.850,00
-                  </span>
-                </div>
-                <div style={{ fontSize: '12.5px', color: 'var(--text-muted)' }}>
-                  Contrato de calibração periódica e assistência técnica para a safra de grãos. Condição padrão: 28 DDL.
-                </div>
-              </div>
-            )}
           </div>
 
-          {/* Coluna Lateral Direita ("Próximos Passos / Checklist" do Exemplo) */}
-          <div className="rarus-client-sidebar-col">
-            <div className="rarus-next-steps-card">
-              <div className="rarus-next-steps-title">
-                <span>Próximos Passos & Ações</span>
-                <AlertTriangle size={16} color="var(--rarus-warning)" />
-              </div>
-
-              <div className="rarus-checklist-list">
-                <div className="rarus-checklist-item">
-                  <div className="rarus-checklist-num">1</div>
-                  <div>
-                    <strong>Revisar instrumentos vencendo no próximo 1 ano</strong>
-                    <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
-                      Horizonte comercial preventivo de calibração para safra.
-                    </div>
-                  </div>
-                </div>
-
-                <div className="rarus-checklist-item">
-                  <div className="rarus-checklist-num">2</div>
-                  <div>
-                    <strong>Enviar orçamento de recalibração</strong>
-                    <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
-                      Proposta comercial para os medidores G650i e balança BG1000.
-                    </div>
-                  </div>
-                </div>
-
-                <div className="rarus-checklist-item">
-                  <div className="rarus-checklist-num">3</div>
-                  <div>
-                    <strong>Validar selos e lacres novos</strong>
-                    <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
-                      Conferir numeração apostada pelo técnico Itamar Soares.
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <button
-                className="btn-primary-rarus"
-                style={{ width: '100%', justifyContent: 'center' }}
-                onClick={() => alert(`Abertura de nova OS direcionada para: ${clienteSelecionado.nomeFantasia}`)}
-              >
-                <Plus size={15} />
-                <span>Abrir Nova OS para este Cliente</span>
-              </button>
+          {/* Rodapé de Auditoria (Baseado na Imagem e Gemini Code) */}
+          <div className="card-footer">
+            <div>
+              Usuário Inc: <strong>CAIO DETZ</strong> • Usuário Alt: <strong>JANAINA</strong>
+            </div>
+            <div>
+              Últ. Alteração: <strong>02/09/2026 14:20</strong> • Data Cadastro: <strong>{formDataCadastro}</strong>
             </div>
           </div>
         </div>
 
-        {/* Modal Novo Equipamento Vinculado Diretamente a este Cliente */}
+        {/* Modal Novo Equipamento */}
         {modalNovoEquipamento && (
           <div className="rarus-modal-backdrop" onClick={() => setModalNovoEquipamento(false)}>
             <div className="rarus-modal-box" onClick={(e) => e.stopPropagation()}>
-              <div className="rarus-modal-header">
-                <h3 style={{ margin: 0, fontSize: '17px', fontWeight: 700 }}>
-                  Novo Equipamento para: {clienteSelecionado.nomeFantasia}
-                </h3>
+              <div className="card-header">
+                <h3 className="card-title">Novo Equipamento para {formRazaoSocial || 'Cliente'}</h3>
               </div>
               <form onSubmit={handleSalvarEquipamento}>
-                <div className="rarus-modal-body">
-                  <div className="rarus-form-row">
-                    <div className="rarus-form-group">
-                      <label>Cliente (Vinculado Automaticamente):</label>
-                      <input value={`${clienteSelecionado.nomeFantasia} (${clienteSelecionado.cnpj})`} disabled />
-                    </div>
-                    <div className="rarus-form-group">
-                      <label>Tipo de Equipamento:</label>
-                      <select value={eqTipo} onChange={(e) => setEqTipo(e.target.value)}>
-                        <option value="Medidor de Umidade GEHAKA">Medidor de Umidade GEHAKA</option>
-                        <option value="Balança de Precisão">Balança de Precisão</option>
-                        <option value="Multigás">Detector Multigás</option>
-                        <option value="pHmetro">pHmetro Industrial</option>
-                      </select>
-                    </div>
-                  </div>
-
-                  <div className="rarus-form-row">
-                    <div className="rarus-form-group">
-                      <label>Fabricante:</label>
-                      <input value={eqFabricante} onChange={(e) => setEqFabricante(e.target.value)} required />
-                    </div>
-                    <div className="rarus-form-group">
-                      <label>Modelo:</label>
-                      <input value={eqModelo} onChange={(e) => setEqModelo(e.target.value)} required />
-                    </div>
-                  </div>
-
-                  <div className="rarus-form-row">
-                    <div className="rarus-form-group">
-                      <label>Número de Série *:</label>
+                <div className="card-body">
+                  <div className="form-grid">
+                    <div className="form-group col-6">
+                      <label className="form-label">Modelo *</label>
                       <input
-                        placeholder="Ex: GEH-2025-00123"
+                        className="form-input"
+                        value={eqModelo}
+                        onChange={(e) => setEqModelo(e.target.value)}
+                        required
+                      />
+                    </div>
+                    <div className="form-group col-6">
+                      <label className="form-label">Fabricante</label>
+                      <input
+                        className="form-input"
+                        value={eqFabricante}
+                        onChange={(e) => setEqFabricante(e.target.value)}
+                      />
+                    </div>
+                    <div className="form-group col-6">
+                      <label className="form-label">Número de Série *</label>
+                      <input
+                        className="form-input"
+                        placeholder="Ex: GEH-2026-9014"
                         value={eqSerie}
                         onChange={(e) => setEqSerie(e.target.value)}
                         required
                       />
                     </div>
-                    <div className="rarus-form-group">
-                      <label>Patrimônio do Cliente:</label>
+                    <div className="form-group col-6">
+                      <label className="form-label">Patrimônio do Cliente</label>
                       <input
-                        placeholder="Ex: PAT-AGRO-450"
+                        className="form-input"
+                        placeholder="Ex: PAT-001"
                         value={eqPatrimonio}
                         onChange={(e) => setEqPatrimonio(e.target.value)}
                       />
                     </div>
-                  </div>
-
-                  <div className="rarus-form-row">
-                    <div className="rarus-form-group">
-                      <label>Lacre Novo:</label>
+                    <div className="form-group col-6">
+                      <label className="form-label">Lacre Novo</label>
                       <input
-                        placeholder="Ex: LAC-2026-1050"
+                        className="form-input"
+                        placeholder="Ex: LAC-2026-10"
                         value={eqLacreNovo}
                         onChange={(e) => setEqLacreNovo(e.target.value)}
                       />
                     </div>
-                    <div className="rarus-form-group">
-                      <label>Selo Novo (Inmetro / RARUS):</label>
+                    <div className="form-group col-6">
+                      <label className="form-label">Selo Novo Inmetro</label>
                       <input
-                        placeholder="Ex: SELO-INM-66201"
+                        className="form-input"
+                        placeholder="Ex: SELO-INM-902"
                         value={eqSeloNovo}
                         onChange={(e) => setEqSeloNovo(e.target.value)}
                       />
                     </div>
                   </div>
                 </div>
-
-                <div className="rarus-modal-footer">
+                <div className="action-bar" style={{ justifyContent: 'flex-end' }}>
                   <button
                     type="button"
-                    className="btn-secondary-rarus"
+                    className="btn btn-secondary"
                     onClick={() => setModalNovoEquipamento(false)}
                   >
                     Cancelar
                   </button>
-                  <button type="submit" className="btn-primary-rarus">
-                    Salvar Equipamento no Cliente
+                  <button type="submit" className="btn btn-primary">
+                    Salvar Equipamento
                   </button>
                 </div>
               </form>
@@ -662,22 +818,22 @@ export const ClientesView: React.FC = () => {
     );
   }
 
-  // Listagem Geral dos Clientes (Inspirado no DataGrid de exemplo para tela de OS e CLIENTES.webp)
+  // LISTAGEM PRINCIPAL DE CLIENTES
   return (
     <div className="rarus-content-scroll">
-      {/* Header do Módulo */}
+      {/* Header */}
       <div className="rarus-page-header">
         <div className="rarus-page-title-group">
           <h1>Clientes & Plantas Industriais</h1>
           <p>Gestão comercial, parque de equipamentos vinculados e rastreabilidade de serviços</p>
         </div>
-        <button className="btn-primary-rarus" onClick={() => setModalNovoCliente(true)} type="button">
+        <button className="btn btn-primary" onClick={handleAbrirNovo} type="button">
           <Plus size={15} />
           <span>Novo Cliente</span>
         </button>
       </div>
 
-      {/* Cards de Métricas Superiores */}
+      {/* KPI Cards (Padrão 28px Display) */}
       <div className="rarus-kpi-grid">
         <div className="rarus-kpi-card">
           <div className="rarus-kpi-top">
@@ -687,7 +843,7 @@ export const ClientesView: React.FC = () => {
             </div>
           </div>
           <div className="rarus-kpi-value">{clientes.length}</div>
-          <span className="rarus-kpi-trend trend-up">↑ 12% no trimestre</span>
+          <span className="rarus-kpi-trend trend-up">↑ 12% vs último trimestre</span>
         </div>
 
         <div className="rarus-kpi-card">
@@ -703,13 +859,13 @@ export const ClientesView: React.FC = () => {
 
         <div className="rarus-kpi-card">
           <div className="rarus-kpi-top">
-            <span className="rarus-kpi-label">Ordens de Serviço em Aberto</span>
+            <span className="rarus-kpi-label">Ordens de Serviço Ativas</span>
             <div className="rarus-kpi-icon-box">
               <ClipboardList size={18} />
             </div>
           </div>
           <div className="rarus-kpi-value">2</div>
-          <span className="rarus-kpi-trend trend-up">1 em bancada, 1 em campo</span>
+          <span className="rarus-kpi-trend trend-up">Em atendimento na safra</span>
         </div>
 
         <div className="rarus-kpi-card">
@@ -720,13 +876,12 @@ export const ClientesView: React.FC = () => {
             </div>
           </div>
           <div className="rarus-kpi-value">100%</div>
-          <span className="rarus-kpi-trend trend-up">Padrões dentro da tolerância</span>
+          <span className="rarus-kpi-trend trend-up">Padrões RBC vigentes</span>
         </div>
       </div>
 
-      {/* Grid com Abas de Contadores e Toolbar */}
+      {/* DataGrid Container */}
       <div className="rarus-datagrid-container">
-        {/* Abas de Filtros de Segmento */}
         <div className="rarus-grid-header-tabs">
           <button
             className={`rarus-filter-tab-pill ${segmentoFiltro === 'todos' ? 'active' : ''}`}
@@ -751,10 +906,9 @@ export const ClientesView: React.FC = () => {
           </button>
         </div>
 
-        {/* Toolbar de Busca */}
         <div className="rarus-grid-toolbar">
           <div className="rarus-inline-search">
-            <Search size={15} color="var(--text-muted)" />
+            <Search size={15} color="var(--color-text-muted)" />
             <input
               placeholder="Buscar por razão social, nome fantasia, CNPJ..."
               value={busca}
@@ -763,216 +917,86 @@ export const ClientesView: React.FC = () => {
           </div>
         </div>
 
-        {/* DataGrid de Clientes */}
         <table className="rarus-table">
           <thead>
             <tr>
-              <th>Cliente / Razão Social</th>
+              <th>Código</th>
+              <th>Razão Social / Nome Fantasia</th>
               <th>CNPJ</th>
-              <th>Segmento Industrial</th>
-              <th>Localização</th>
+              <th>Segmento</th>
+              <th>Cidade / UF</th>
               <th>Contato Técnico</th>
               <th>Status</th>
               <th>Ações</th>
             </tr>
           </thead>
           <tbody>
-            {clientes.map((c) => {
-              const initials = c.nomeFantasia.substring(0, 2).toUpperCase();
-              return (
-                <tr
-                  key={c.id}
-                  style={{ cursor: 'pointer' }}
-                  onClick={() => setClienteSelecionado(c)}
-                >
-                  <td>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                      <div
-                        className="rarus-table-avatar"
-                        style={{ background: 'linear-gradient(135deg, var(--rarus-navy), var(--rarus-cyan))' }}
-                      >
-                        {initials}
-                      </div>
-                      <div>
-                        <div style={{ fontWeight: 700, color: 'var(--text-main)' }}>
-                          {c.nomeFantasia}
-                        </div>
-                        <div style={{ fontSize: '11.5px', color: 'var(--text-muted)' }}>
-                          {c.razaoSocial}
-                        </div>
-                      </div>
-                    </div>
-                  </td>
-                  <td>
-                    <span style={{ fontFamily: 'monospace', fontSize: '12px' }}>{c.cnpj}</span>
-                  </td>
-                  <td>
-                    <span
-                      style={{
-                        fontSize: '11.5px',
-                        fontWeight: 600,
-                        color: 'var(--rarus-navy)',
-                        background: 'var(--rarus-cyan-light)',
-                        padding: '2px 8px',
-                        borderRadius: 4,
-                      }}
-                    >
-                      {c.segmento}
-                    </span>
-                  </td>
-                  <td>
-                    {c.cidade} / {c.estado}
-                  </td>
-                  <td>
-                    <div style={{ fontWeight: 600 }}>{c.contatoResponsavel}</div>
-                    <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{c.telefone}</div>
-                  </td>
-                  <td>
-                    <span className="rarus-status-pill status-ativo">
-                      <span className="rarus-status-dot" />
-                      {c.status}
-                    </span>
-                  </td>
-                  <td>
-                    <button
-                      className="btn-secondary-rarus"
-                      style={{ padding: '4px 10px', fontSize: '12px' }}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setClienteSelecionado(c);
-                      }}
-                    >
-                      <span>Perfil 360º</span>
-                      <ChevronRight size={13} />
-                    </button>
-                  </td>
-                </tr>
-              );
-            })}
+            {clientes.map((c) => (
+              <tr
+                key={c.id}
+                style={{ cursor: 'pointer' }}
+                onClick={() => setClienteSelecionado(c)}
+              >
+                <td>
+                  <span style={{ fontFamily: 'monospace', fontWeight: 600, color: 'var(--color-primary-500)' }}>
+                    {c.codigo || 'C03709'}
+                  </span>
+                </td>
+                <td>
+                  <div style={{ fontWeight: 600, color: 'var(--color-text-main)' }}>
+                    {c.nomeFantasia}
+                  </div>
+                  <div style={{ fontSize: '11.5px', color: 'var(--color-text-muted)' }}>
+                    {c.razaoSocial}
+                  </div>
+                </td>
+                <td>
+                  <span style={{ fontFamily: 'monospace', fontSize: '12px' }}>{c.cnpj}</span>
+                </td>
+                <td>
+                  <span
+                    style={{
+                      fontSize: '11.5px',
+                      fontWeight: 600,
+                      color: 'var(--color-primary-500)',
+                      background: 'var(--color-primary-100)',
+                      padding: '2px 8px',
+                      borderRadius: 4,
+                    }}
+                  >
+                    {c.segmento}
+                  </span>
+                </td>
+                <td>
+                  {c.cidade} / {c.estado}
+                </td>
+                <td>
+                  <div style={{ fontWeight: 500 }}>{c.contatoResponsavel}</div>
+                  <div style={{ fontSize: '11px', color: 'var(--color-text-muted)' }}>{c.telefone}</div>
+                </td>
+                <td>
+                  <span className={`status-badge ${c.status === 'Ativo' ? 'ativo' : 'inativo'}`}>
+                    <span className="rarus-status-dot" />
+                    {c.status}
+                  </span>
+                </td>
+                <td>
+                  <button
+                    className="btn btn-secondary"
+                    style={{ padding: '4px 10px', fontSize: '12px' }}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setClienteSelecionado(c);
+                    }}
+                  >
+                    Abrir Ficha
+                  </button>
+                </td>
+              </tr>
+            ))}
           </tbody>
         </table>
       </div>
-
-      {/* Modal Novo Cliente */}
-      {modalNovoCliente && (
-        <div className="rarus-modal-backdrop" onClick={() => setModalNovoCliente(false)}>
-          <div className="rarus-modal-box" onClick={(e) => e.stopPropagation()}>
-            <div className="rarus-modal-header">
-              <h3 style={{ margin: 0, fontSize: '17px', fontWeight: 700 }}>
-                Cadastrar Novo Cliente Industrial
-              </h3>
-            </div>
-            <form onSubmit={handleSalvarCliente}>
-              <div className="rarus-modal-body">
-                <div className="rarus-form-row">
-                  <div className="rarus-form-group">
-                    <label>Razão Social *:</label>
-                    <input
-                      required
-                      placeholder="Ex: Cooperativa Agrícola do Sul Ltda"
-                      value={novoRazaoSocial}
-                      onChange={(e) => setNovoRazaoSocial(e.target.value)}
-                    />
-                  </div>
-                  <div className="rarus-form-group">
-                    <label>Nome Fantasia:</label>
-                    <input
-                      placeholder="Ex: AgroSul"
-                      value={novoNomeFantasia}
-                      onChange={(e) => setNovoNomeFantasia(e.target.value)}
-                    />
-                  </div>
-                </div>
-
-                <div className="rarus-form-row">
-                  <div className="rarus-form-group">
-                    <label>CNPJ *:</label>
-                    <input
-                      required
-                      placeholder="00.000.000/0000-00"
-                      value={novoCnpj}
-                      onChange={(e) => setNovoCnpj(e.target.value)}
-                    />
-                  </div>
-                  <div className="rarus-form-group">
-                    <label>Segmento Industrial:</label>
-                    <select
-                      value={novoSegmento}
-                      onChange={(e) => setNovoSegmento(e.target.value)}
-                    >
-                      <option value="Agronegócio / Grãos">Agronegócio / Grãos</option>
-                      <option value="Farmacêutico / Laboratório">Farmacêutico / Laboratório</option>
-                      <option value="Alimentos / Moagem">Alimentos / Moagem</option>
-                      <option value="Químico / Petroquímico">Químico / Petroquímico</option>
-                    </select>
-                  </div>
-                </div>
-
-                <div className="rarus-form-row">
-                  <div className="rarus-form-group">
-                    <label>E-mail:</label>
-                    <input
-                      type="email"
-                      placeholder="qualidade@empresa.com"
-                      value={novoEmail}
-                      onChange={(e) => setNovoEmail(e.target.value)}
-                    />
-                  </div>
-                  <div className="rarus-form-group">
-                    <label>Telefone / WhatsApp:</label>
-                    <input
-                      placeholder="(19) 99999-9999"
-                      value={novoTelefone}
-                      onChange={(e) => setNovoTelefone(e.target.value)}
-                    />
-                  </div>
-                </div>
-
-                <div className="rarus-form-row">
-                  <div className="rarus-form-group">
-                    <label>Cidade:</label>
-                    <input
-                      placeholder="Ex: Ribeirão Preto"
-                      value={novoCidade}
-                      onChange={(e) => setNovoCidade(e.target.value)}
-                    />
-                  </div>
-                  <div className="rarus-form-group">
-                    <label>Estado:</label>
-                    <input
-                      value={novoEstado}
-                      onChange={(e) => setNovoEstado(e.target.value)}
-                    />
-                  </div>
-                </div>
-
-                <div className="rarus-form-group">
-                  <label>Observações Avulsas:</label>
-                  <textarea
-                    placeholder="Instruções de acesso, quantidade estimada de equipamentos..."
-                    value={novoObs}
-                    onChange={(e) => setNovoObs(e.target.value)}
-                    rows={3}
-                  />
-                </div>
-              </div>
-
-              <div className="rarus-modal-footer">
-                <button
-                  type="button"
-                  className="btn-secondary-rarus"
-                  onClick={() => setModalNovoCliente(false)}
-                >
-                  Cancelar
-                </button>
-                <button type="submit" className="btn-primary-rarus">
-                  Salvar Cliente
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
     </div>
   );
 };
