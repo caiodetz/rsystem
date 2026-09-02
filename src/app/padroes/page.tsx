@@ -3,12 +3,11 @@ import { TabProvider } from '@/core/context/TabContext';
 import { DesktopWorkstation } from '@/core/components/desktop/DesktopWorkstation';
 
 export const metadata: Metadata = {
-  title: 'RSYSTEM - Metrologia & Manutenção Industrial',
-  description:
-    'Sistema modular de manutenção, calibração e rastreabilidade metrológica RBC para equipamentos industriais.',
+  title: 'Padrões de Referência RBC - RSYSTEM',
+  description: 'Controle de padrões metrológicos de referência e certificados de calibração RBC.',
 };
 
-export default function HomePage() {
+export default function PadroesPage() {
   return (
     <TabProvider>
       <DesktopWorkstation />

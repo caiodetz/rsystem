@@ -1,0 +1,1125 @@
+/* ==========================================================================
+   RARUS TECNOLOGIA & SERVIÇOS - DESIGN SYSTEM: WORKSTATION SAAS HYBRID
+   Inspirado nos mockups oficiais:
+   - exemplo para tela de OS e CLIENTES.webp (Sidebar agrupada, Topbar ⌘K, KPIs, DataGrid)
+   - cliente exemplo.webp (Perfil 360º, Abas internas, Checklist de Próximos Passos)
+   - exemplo de desing textos e componentes .webp (Modais com abas, seletores visuais e toggles)
+   - LOGO-RARUS.png (Cores institucionais: Azul Marinho #0a2240 e Ciano Elétrico #1d82cd)
+   ========================================================================== */
+
+:root {
+  /* Marca RARUS */
+  --rarus-navy: #0a2240;
+  --rarus-navy-light: #15325b;
+  --rarus-cyan: #1d82cd;
+  --rarus-cyan-light: #e0f2fe;
+  --rarus-cyan-hover: #166ba8;
+  
+  /* Estados & Metrologia */
+  --rarus-success: #059669;
+  --rarus-success-bg: #d1fae5;
+  --rarus-warning: #d97706;
+  --rarus-warning-bg: #fef3c7;
+  --rarus-danger: #dc2626;
+  --rarus-danger-bg: #fee2e2;
+  --rarus-purple: #7c3aed;
+  --rarus-purple-bg: #ede9fe;
+
+  /* Superfícies & Layout (Tema Claro) */
+  --bg-app: #f8fafc;
+  --bg-sidebar: #ffffff;
+  --bg-sidebar-hover: #f1f5f9;
+  --bg-card: #ffffff;
+  --bg-card-hover: #f8fafc;
+  --bg-input: #ffffff;
+  --border-subtle: #e2e8f0;
+  --border-strong: #cbd5e1;
+  
+  /* Textos */
+  --text-main: #0f172a;
+  --text-muted: #64748b;
+  --text-subtle: #94a3b8;
+  --text-inverse: #ffffff;
+
+  /* Componentes */
+  --tab-inactive: #64748b;
+  --tab-active: #0a2240;
+  --tab-active-border: #1d82cd;
+
+  /* Sombras */
+  --shadow-sm: 0 1px 2px 0 rgba(15, 23, 42, 0.05);
+  --shadow-md: 0 4px 6px -1px rgba(15, 23, 42, 0.07), 0 2px 4px -2px rgba(15, 23, 42, 0.04);
+  --shadow-lg: 0 10px 15px -3px rgba(15, 23, 42, 0.08), 0 4px 6px -4px rgba(15, 23, 42, 0.03);
+  --shadow-modal: 0 20px 25px -5px rgba(10, 34, 64, 0.2), 0 8px 10px -6px rgba(10, 34, 64, 0.1);
+
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius-xl: 18px;
+}
+
+/* Modo Escuro */
+[data-theme="dark"] {
+  --rarus-navy: #0e1e38;
+  --rarus-navy-light: #1e293b;
+  --bg-app: #090e17;
+  --bg-sidebar: #0f172a;
+  --bg-sidebar-hover: #1e293b;
+  --bg-card: #131d33;
+  --bg-card-hover: #1a2642;
+  --bg-input: #17233d;
+  --border-subtle: #202e4c;
+  --border-strong: #334155;
+  
+  --text-main: #f8fafc;
+  --text-muted: #94a3b8;
+  --text-subtle: #64748b;
+  --text-inverse: #0f172a;
+
+  --tab-inactive: #94a3b8;
+  --tab-active: #ffffff;
+  --tab-active-border: #38bdf8;
+  
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.5);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.6);
+  --shadow-modal: 0 20px 25px -5px rgba(0, 0, 0, 0.8);
+}
+
+/* ==========================================================================
+   ESTRUTURA PRINCIPAL (WORKSTATION SHELL)
+   ========================================================================== */
+.rarus-workstation-root {
+  display: flex;
+  height: 100vh;
+  width: 100vw;
+  overflow: hidden;
+  background-color: var(--bg-app);
+  color: var(--text-main);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Inter, Helvetica, Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* 1. SIDEBAR LATERAL RETRÁTIL (Estilo Amanah CRM) */
+.rarus-sidebar {
+  width: 270px;
+  min-width: 270px;
+  background-color: var(--bg-sidebar);
+  border-right: 1px solid var(--border-subtle);
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  transition: width 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  z-index: 40;
+  user-select: none;
+}
+
+.rarus-sidebar.collapsed {
+  width: 72px;
+  min-width: 72px;
+}
+
+.rarus-sidebar-header {
+  padding: 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.rarus-logo-img {
+  height: 38px;
+  width: auto;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+
+.rarus-sidebar-brand-text {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.rarus-brand-name {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--rarus-navy);
+  letter-spacing: -0.2px;
+}
+
+[data-theme="dark"] .rarus-brand-name {
+  color: #38bdf8;
+}
+
+.rarus-brand-tagline {
+  font-size: 10.5px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Seletor de Unidade */
+.rarus-unidade-selector {
+  margin: 12px 14px 4px 14px;
+  background: var(--bg-card-hover);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  padding: 6px 10px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--text-main);
+  cursor: pointer;
+}
+
+/* Navegação Agrupada da Sidebar */
+.rarus-sidebar-nav {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.rarus-nav-group-title {
+  font-size: 10.5px;
+  font-weight: 700;
+  color: var(--text-subtle);
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  padding: 0 10px 4px 10px;
+}
+
+.rarus-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 12px;
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  position: relative;
+  text-decoration: none;
+}
+
+.rarus-nav-item:hover {
+  background-color: var(--bg-sidebar-hover);
+  color: var(--text-main);
+}
+
+.rarus-nav-item.active {
+  background-color: var(--rarus-cyan-light);
+  color: var(--rarus-navy);
+  font-weight: 600;
+}
+
+[data-theme="dark"] .rarus-nav-item.active {
+  background-color: rgba(29, 130, 205, 0.2);
+  color: #38bdf8;
+}
+
+.rarus-nav-item .badge {
+  margin-left: auto;
+  font-size: 10.5px;
+  padding: 2px 7px;
+  border-radius: 9999px;
+  background-color: var(--border-subtle);
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+.rarus-nav-item.active .badge {
+  background-color: var(--rarus-cyan);
+  color: #ffffff;
+}
+
+/* Rodapé da Sidebar (Metas & SLA) */
+.rarus-sidebar-footer {
+  padding: 14px;
+  border-top: 1px solid var(--border-subtle);
+  background: var(--bg-sidebar);
+}
+
+.rarus-sla-card {
+  background: var(--bg-card-hover);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: 10px;
+}
+
+.rarus-sla-header {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+
+.rarus-progress-bar {
+  height: 6px;
+  background-color: var(--border-subtle);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.rarus-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--rarus-cyan), var(--rarus-success));
+  border-radius: 3px;
+}
+
+/* ==========================================================================
+   2. ÁREA PRINCIPAL (MAIN WORKSTATION)
+   ========================================================================== */
+.rarus-main-viewport {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+}
+
+/* Barra Superior (Top Bar) */
+.rarus-topbar {
+  height: 56px;
+  min-height: 56px;
+  background-color: var(--bg-card);
+  border-bottom: 1px solid var(--border-subtle);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 20px;
+  gap: 16px;
+  z-index: 30;
+}
+
+/* Campo de Busca Global ⌘K */
+.rarus-search-trigger {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background-color: var(--bg-app);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: 7px 14px;
+  width: 380px;
+  color: var(--text-muted);
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.rarus-search-trigger:hover {
+  border-color: var(--rarus-cyan);
+  color: var(--text-main);
+  box-shadow: 0 0 0 1px var(--rarus-cyan);
+}
+
+.rarus-search-shortcut {
+  margin-left: auto;
+  font-size: 11px;
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: 4px;
+  padding: 1px 6px;
+  font-family: monospace;
+  font-weight: 600;
+  color: var(--text-subtle);
+}
+
+/* Ações Rápidas no Topo */
+.rarus-topbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.btn-primary-rarus {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  background-color: var(--rarus-navy);
+  color: #ffffff;
+  border: none;
+  border-radius: var(--radius-md);
+  padding: 8px 14px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  box-shadow: var(--shadow-sm);
+}
+
+.btn-primary-rarus:hover {
+  background-color: var(--rarus-cyan);
+  box-shadow: var(--shadow-md);
+}
+
+.btn-secondary-rarus {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  background-color: transparent;
+  color: var(--text-main);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: 8px 14px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.btn-secondary-rarus:hover {
+  background-color: var(--bg-card-hover);
+  border-color: var(--border-strong);
+}
+
+.icon-btn-rarus {
+  background: transparent;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  position: relative;
+}
+
+.icon-btn-rarus:hover {
+  background-color: var(--bg-card-hover);
+  color: var(--text-main);
+}
+
+.rarus-badge-dot {
+  position: absolute;
+  top: 7px;
+  right: 7px;
+  width: 8px;
+  height: 8px;
+  background-color: var(--rarus-danger);
+  border-radius: 50%;
+  border: 2px solid var(--bg-card);
+}
+
+/* Perfil do Usuário na Topbar */
+.rarus-user-profile-badge {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding-left: 8px;
+  border-left: 1px solid var(--border-subtle);
+  cursor: pointer;
+}
+
+.rarus-avatar-circle {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--rarus-navy), var(--rarus-cyan));
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12.5px;
+  font-weight: 700;
+}
+
+.rarus-user-info-text {
+  display: flex;
+  flex-direction: column;
+}
+
+.rarus-user-name {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--text-main);
+}
+
+.rarus-user-role {
+  font-size: 10.5px;
+  color: var(--text-muted);
+}
+
+/* ==========================================================================
+   3. BARRA DE ABAS MDI DE TRABALHO (MODELO HÍBRIDO)
+   ========================================================================== */
+.rarus-tabs-container {
+  display: flex;
+  align-items: center;
+  background-color: var(--bg-card);
+  border-bottom: 1px solid var(--border-subtle);
+  padding: 0 12px;
+  gap: 4px;
+  height: 40px;
+  min-height: 40px;
+  overflow-x: auto;
+  user-select: none;
+}
+
+.rarus-tab-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  font-size: 12.5px;
+  font-weight: 500;
+  color: var(--tab-inactive);
+  background-color: transparent;
+  border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.15s ease;
+}
+
+.rarus-tab-item:hover {
+  color: var(--text-main);
+  background-color: var(--bg-app);
+}
+
+.rarus-tab-item.active {
+  color: var(--tab-active);
+  font-weight: 600;
+  border-bottom-color: var(--tab-active-border);
+  background-color: var(--bg-app);
+}
+
+.rarus-tab-close-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-subtle);
+  border-radius: 4px;
+  padding: 2px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.rarus-tab-close-btn:hover {
+  background-color: rgba(220, 38, 38, 0.15);
+  color: var(--rarus-danger);
+}
+
+/* ==========================================================================
+   4. CONTEÚDO DAS TELAS & CARDS KPIS
+   ========================================================================== */
+.rarus-content-scroll {
+  flex: 1;
+  overflow-y: auto;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* Cabeçalho da Página */
+.rarus-page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 4px;
+}
+
+.rarus-page-title-group h1 {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--text-main);
+  letter-spacing: -0.4px;
+  margin: 0 0 4px 0;
+}
+
+.rarus-page-title-group p {
+  font-size: 13px;
+  color: var(--text-muted);
+  margin: 0;
+}
+
+/* Grid de Cards de KPIs (Topo dos Módulos) */
+.rarus-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+}
+
+.rarus-kpi-card {
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  padding: 18px;
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  position: relative;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.rarus-kpi-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.rarus-kpi-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.rarus-kpi-label {
+  font-size: 12.5px;
+  font-weight: 500;
+  color: var(--text-muted);
+}
+
+.rarus-kpi-icon-box {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--rarus-cyan-light);
+  color: var(--rarus-navy);
+}
+
+[data-theme="dark"] .rarus-kpi-icon-box {
+  background-color: rgba(29, 130, 205, 0.2);
+  color: #38bdf8;
+}
+
+.rarus-kpi-value {
+  font-size: 26px;
+  font-weight: 800;
+  color: var(--text-main);
+  letter-spacing: -0.6px;
+}
+
+.rarus-kpi-trend {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11.5px;
+  font-weight: 600;
+}
+
+.trend-up {
+  color: var(--rarus-success);
+}
+
+.trend-down {
+  color: var(--rarus-danger);
+}
+
+.trend-neutral {
+  color: var(--text-muted);
+}
+
+/* ==========================================================================
+   5. FILTROS SEGMENTADOS & DATAGRID MODERNA
+   ========================================================================== */
+.rarus-datagrid-container {
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Abas de Contadores Integrados */
+.rarus-grid-header-tabs {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 18px;
+  border-bottom: 1px solid var(--border-subtle);
+  background-color: var(--bg-card);
+  overflow-x: auto;
+}
+
+.rarus-filter-tab-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: var(--radius-md);
+  font-size: 12.5px;
+  font-weight: 500;
+  color: var(--text-muted);
+  cursor: pointer;
+  background-color: transparent;
+  border: 1px solid transparent;
+  transition: all 0.15s ease;
+}
+
+.rarus-filter-tab-pill:hover {
+  background-color: var(--bg-app);
+  color: var(--text-main);
+}
+
+.rarus-filter-tab-pill.active {
+  background-color: var(--rarus-cyan-light);
+  color: var(--rarus-navy);
+  font-weight: 600;
+  border-color: rgba(29, 130, 205, 0.2);
+}
+
+[data-theme="dark"] .rarus-filter-tab-pill.active {
+  background-color: rgba(29, 130, 205, 0.25);
+  color: #38bdf8;
+  border-color: rgba(56, 189, 248, 0.3);
+}
+
+.rarus-filter-tab-pill .count {
+  font-size: 11px;
+  padding: 1px 6px;
+  border-radius: 9999px;
+  background-color: rgba(0, 0, 0, 0.08);
+  font-weight: 700;
+}
+
+/* Barra de Pesquisa e Filtros Rápidos */
+.rarus-grid-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 18px;
+  background-color: var(--bg-app);
+  border-bottom: 1px solid var(--border-subtle);
+  gap: 12px;
+}
+
+.rarus-inline-search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: 6px 12px;
+  width: 320px;
+}
+
+.rarus-inline-search input {
+  border: none;
+  background: transparent;
+  font-size: 13px;
+  color: var(--text-main);
+  outline: none;
+  width: 100%;
+}
+
+.rarus-grid-actions-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Tabela Limpa (DataGrid) */
+.rarus-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  text-align: left;
+}
+
+.rarus-table th {
+  background-color: var(--bg-card);
+  color: var(--text-muted);
+  font-size: 11.5px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.rarus-table td {
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--border-subtle);
+  color: var(--text-main);
+  vertical-align: middle;
+}
+
+.rarus-table tr:last-child td {
+  border-bottom: none;
+}
+
+.rarus-table tr:hover td {
+  background-color: var(--bg-card-hover);
+}
+
+/* Iniciais Coloridas da Linha */
+.rarus-table-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 700;
+  color: #ffffff;
+  flex-shrink: 0;
+}
+
+/* Pills de Status Metrológico com Ponto */
+.rarus-status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 10px;
+  border-radius: 9999px;
+  font-size: 11.5px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.rarus-status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+}
+
+.status-calibrado, .status-ativo, .status-valido, .status-aprovada {
+  background-color: var(--rarus-success-bg);
+  color: var(--rarus-success);
+}
+.status-calibrado .rarus-status-dot, .status-ativo .rarus-status-dot, .status-valido .rarus-status-dot {
+  background-color: var(--rarus-success);
+}
+
+.status-alerta, .status-aguardando, .status-em-servico, .status-alerta60d {
+  background-color: var(--rarus-warning-bg);
+  color: var(--rarus-warning);
+}
+.status-alerta .rarus-status-dot, .status-aguardando .rarus-status-dot {
+  background-color: var(--rarus-warning);
+}
+
+.status-vencido, .status-bloqueado, .status-critico, .status-cancelada {
+  background-color: var(--rarus-danger-bg);
+  color: var(--rarus-danger);
+}
+.status-vencido .rarus-status-dot, .status-bloqueado .rarus-status-dot {
+  background-color: var(--rarus-danger);
+}
+
+/* ==========================================================================
+   6. PERFIL 360º DO CLIENTE (Estilo cliente exemplo.webp)
+   ========================================================================== */
+.rarus-client-360-container {
+  display: grid;
+  grid-template-columns: 1fr 340px;
+  gap: 20px;
+  align-items: start;
+}
+
+.rarus-client-main-col {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.rarus-client-header-card {
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  padding: 22px;
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.rarus-client-identity {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.rarus-client-avatar-large {
+  width: 56px;
+  height: 56px;
+  border-radius: var(--radius-md);
+  background: linear-gradient(135deg, var(--rarus-navy), var(--rarus-cyan));
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.rarus-client-info-names h2 {
+  margin: 0 0 4px 0;
+  font-size: 19px;
+  font-weight: 700;
+  color: var(--text-main);
+}
+
+.rarus-client-info-names p {
+  margin: 0;
+  font-size: 12.5px;
+  color: var(--text-muted);
+}
+
+.rarus-client-contacts-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 18px;
+  padding-top: 14px;
+  border-top: 1px solid var(--border-subtle);
+  font-size: 12.5px;
+  color: var(--text-muted);
+}
+
+.rarus-contact-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* Abas Internas do Perfil 360 */
+.rarus-client-tabs-nav {
+  display: flex;
+  border-bottom: 1px solid var(--border-subtle);
+  gap: 20px;
+}
+
+.rarus-client-tab-btn {
+  background: transparent;
+  border: none;
+  padding: 10px 0;
+  font-size: 13.5px;
+  font-weight: 500;
+  color: var(--text-muted);
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.rarus-client-tab-btn:hover {
+  color: var(--text-main);
+}
+
+.rarus-client-tab-btn.active {
+  color: var(--rarus-navy);
+  font-weight: 700;
+  border-bottom-color: var(--rarus-cyan);
+}
+
+[data-theme="dark"] .rarus-client-tab-btn.active {
+  color: #38bdf8;
+}
+
+/* Painel Lateral Direito: Próximos Passos & Checklist */
+.rarus-client-sidebar-col {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.rarus-next-steps-card {
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+  box-shadow: var(--shadow-sm);
+}
+
+.rarus-next-steps-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-main);
+  margin-bottom: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.rarus-checklist-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+.rarus-checklist-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: 12.5px;
+  line-height: 1.4;
+  color: var(--text-main);
+}
+
+.rarus-checklist-num {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background-color: var(--rarus-cyan-light);
+  color: var(--rarus-navy);
+  font-size: 11px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+[data-theme="dark"] .rarus-checklist-num {
+  background-color: rgba(29, 130, 205, 0.25);
+  color: #38bdf8;
+}
+
+/* ==========================================================================
+   7. MODAIS COM ABAS & SELETORES VISUAIS (Estilo exemplo de design textos)
+   ========================================================================== */
+.rarus-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(10, 34, 64, 0.5);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  padding: 20px;
+}
+
+.rarus-modal-box {
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-xl);
+  width: 100%;
+  max-width: 780px;
+  max-height: 90vh;
+  box-shadow: var(--shadow-modal);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.rarus-modal-header {
+  padding: 18px 24px;
+  border-bottom: 1px solid var(--border-subtle);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.rarus-modal-tabs {
+  display: flex;
+  padding: 0 24px;
+  border-bottom: 1px solid var(--border-subtle);
+  background-color: var(--bg-app);
+  gap: 16px;
+}
+
+.rarus-modal-body {
+  padding: 24px;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.rarus-modal-footer {
+  padding: 16px 24px;
+  border-top: 1px solid var(--border-subtle);
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+  background-color: var(--bg-card);
+}
+
+/* Formulários Modernos */
+.rarus-form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.rarus-form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 14px;
+}
+
+.rarus-form-group label {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--text-main);
+}
+
+.rarus-form-group input,
+.rarus-form-group select,
+.rarus-form-group textarea {
+  background-color: var(--bg-input);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: 8px 12px;
+  font-size: 13px;
+  color: var(--text-main);
+  outline: none;
+  transition: all 0.15s ease;
+}
+
+.rarus-form-group input:focus,
+.rarus-form-group select:focus,
+.rarus-form-group textarea:focus {
+  border-color: var(--rarus-cyan);
+  box-shadow: 0 0 0 2px var(--rarus-cyan-light);
+}
+
+/* Editor de Template HTML em Split-View */
+.rarus-split-editor {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  height: 520px;
+}
+
+.rarus-code-pane {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.rarus-code-pane textarea {
+  flex: 1;
+  font-family: monospace;
+  font-size: 12px;
+  padding: 12px;
+  background: #0f172a;
+  color: #38bdf8;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-subtle);
+  resize: none;
+}
+
+.rarus-preview-pane {
+  background: #ffffff;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: 12px;
+  overflow-y: auto;
+  color: #0a2240;
+}
