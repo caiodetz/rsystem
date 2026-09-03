@@ -14,6 +14,7 @@ import {
   Clock,
   History,
   Lock,
+  X,
 } from 'lucide-react';
 
 export const PadroesView: React.FC = () => {
@@ -304,88 +305,137 @@ export const PadroesView: React.FC = () => {
       {/* Modal Novo Padrão */}
       {modalNovo && (
         <div className="rarus-modal-backdrop" onClick={() => setModalNovo(false)}>
-          <div className="rarus-modal-box" onClick={(e) => e.stopPropagation()}>
+          <div
+            className="rarus-modal-box"
+            onClick={(e) => e.stopPropagation()}
+            style={{ maxWidth: '820px' }}
+          >
+            {/* Cabeçalho do Modal */}
             <div className="rarus-modal-header">
-              <h3 style={{ margin: 0, fontSize: '17px', fontWeight: 700 }}>
-                Cadastrar Novo Padrão Basal de Referência
-              </h3>
+              <div className="rarus-modal-header-info">
+                <div className="rarus-modal-icon-badge">
+                  <ShieldCheck size={20} />
+                </div>
+                <div>
+                  <h3 className="rarus-modal-title">
+                    Cadastrar Novo Padrão Basal de Referência
+                  </h3>
+                  <p className="rarus-modal-subtitle">
+                    Controle metrológico, rastreabilidade RBC e ciclo de monitoramento de validade
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                className="rarus-modal-close-btn"
+                onClick={() => setModalNovo(false)}
+                title="Fechar modal"
+              >
+                <X size={18} />
+              </button>
             </div>
+
             <form onSubmit={handleSalvar}>
               <div className="rarus-modal-body">
-                <div className="rarus-form-row">
-                  <div className="rarus-form-group">
-                    <label>Identificador Único (ex: TH-01, BAL-01) *:</label>
+                <div className="form-grid">
+                  <div className="form-group col-4">
+                    <label className="form-label">
+                      Identificador Único <span style={{ color: 'var(--color-danger, #ef4444)' }}>*</span>
+                    </label>
                     <input
                       required
-                      placeholder="Ex: TH-02"
+                      className="form-input"
+                      placeholder="Ex: TH-02, BAL-01"
                       value={codigoIdentificador}
                       onChange={(e) => setCodigoIdentificador(e.target.value)}
                     />
                   </div>
-                  <div className="rarus-form-group">
-                    <label>Grandeza Metrológica:</label>
-                    <select value={grandeza} onChange={(e) => setGrandeza(e.target.value)}>
+
+                  <div className="form-group col-8">
+                    <label className="form-label">Grandeza Metrológica</label>
+                    <select
+                      className="form-select"
+                      value={grandeza}
+                      onChange={(e) => setGrandeza(e.target.value)}
+                    >
                       <option value="Temperatura / Umidade">Temperatura / Umidade</option>
                       <option value="Massa">Massa</option>
                       <option value="Pressão">Pressão</option>
                       <option value="Dimensional">Dimensional</option>
                     </select>
                   </div>
-                </div>
 
-                <div className="rarus-form-group">
-                  <label>Descrição do Padrão *:</label>
-                  <input
-                    required
-                    placeholder="Ex: Termohigrômetro Digital de Alta Precisão"
-                    value={descricao}
-                    onChange={(e) => setDescricao(e.target.value)}
-                  />
-                </div>
-
-                <div className="rarus-form-row">
-                  <div className="rarus-form-group">
-                    <label>Fabricante:</label>
-                    <input value={fabricante} onChange={(e) => setFabricante(e.target.value)} />
-                  </div>
-                  <div className="rarus-form-group">
-                    <label>Modelo:</label>
-                    <input value={modelo} onChange={(e) => setModelo(e.target.value)} />
-                  </div>
-                </div>
-
-                <div className="rarus-form-row">
-                  <div className="rarus-form-group">
-                    <label>Número do Certificado RBC *:</label>
+                  <div className="form-group col-12">
+                    <label className="form-label">
+                      Descrição do Padrão <span style={{ color: 'var(--color-danger, #ef4444)' }}>*</span>
+                    </label>
                     <input
                       required
+                      className="form-input"
+                      placeholder="Ex: Termohigrômetro Digital de Alta Precisão"
+                      value={descricao}
+                      onChange={(e) => setDescricao(e.target.value)}
+                    />
+                  </div>
+
+                  <div className="form-group col-6">
+                    <label className="form-label">Fabricante</label>
+                    <input
+                      className="form-input"
+                      placeholder="Ex: Testo, Toledo, Gehaka"
+                      value={fabricante}
+                      onChange={(e) => setFabricante(e.target.value)}
+                    />
+                  </div>
+
+                  <div className="form-group col-6">
+                    <label className="form-label">Modelo</label>
+                    <input
+                      className="form-input"
+                      placeholder="Ex: 625 Reference"
+                      value={modelo}
+                      onChange={(e) => setModelo(e.target.value)}
+                    />
+                  </div>
+
+                  <div className="form-group col-6">
+                    <label className="form-label">
+                      Número do Certificado RBC <span style={{ color: 'var(--color-danger, #ef4444)' }}>*</span>
+                    </label>
+                    <input
+                      required
+                      className="form-input"
                       placeholder="Ex: RBC-2026-9044"
                       value={certificadoRBC}
                       onChange={(e) => setCertificadoRBC(e.target.value)}
                     />
                   </div>
-                  <div className="rarus-form-group">
-                    <label>Órgão Calibrador Credenciado:</label>
+
+                  <div className="form-group col-6">
+                    <label className="form-label">Órgão Calibrador Credenciado</label>
                     <input
+                      className="form-input"
+                      placeholder="Ex: LabMetrol RBC #0112"
                       value={orgaoCalibrador}
                       onChange={(e) => setOrgaoCalibrador(e.target.value)}
                     />
                   </div>
-                </div>
 
-                <div className="rarus-form-row">
-                  <div className="rarus-form-group">
-                    <label>Data de Calibração:</label>
+                  <div className="form-group col-6">
+                    <label className="form-label">Data de Calibração</label>
                     <input
                       type="date"
+                      className="form-input"
                       value={dataCalibracao}
                       onChange={(e) => setDataCalibracao(e.target.value)}
                     />
                   </div>
-                  <div className="rarus-form-group">
-                    <label>Data de Validade:</label>
+
+                  <div className="form-group col-6">
+                    <label className="form-label">Data de Validade</label>
                     <input
                       type="date"
+                      className="form-input"
                       value={dataValidade}
                       onChange={(e) => setDataValidade(e.target.value)}
                     />
@@ -402,7 +452,8 @@ export const PadroesView: React.FC = () => {
                   Cancelar
                 </button>
                 <button type="submit" className="btn btn-primary">
-                  Cadastrar Padrão Basal
+                  <Plus size={15} />
+                  <span>Cadastrar Padrão Basal</span>
                 </button>
               </div>
             </form>

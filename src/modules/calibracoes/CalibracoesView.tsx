@@ -258,19 +258,46 @@ export const CalibracoesView: React.FC = () => {
       {/* Modal Executar Calibração & Emitir Certificado */}
       {modalNovaCalibracao && (
         <div className="rarus-modal-backdrop" onClick={() => setModalNovaCalibracao(false)}>
-          <div className="rarus-modal-box" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '780px' }}>
+          <div
+            className="rarus-modal-box"
+            onClick={(e) => e.stopPropagation()}
+            style={{ maxWidth: '820px' }}
+          >
+            {/* Cabeçalho do Modal */}
             <div className="rarus-modal-header">
-              <h3 style={{ margin: 0, fontSize: '17px', fontWeight: 700 }}>
-                Execução de Calibração Metrológica & Emissão de Certificado
-              </h3>
+              <div className="rarus-modal-header-info">
+                <div className="rarus-modal-icon-badge">
+                  <Award size={20} />
+                </div>
+                <div>
+                  <h3 className="rarus-modal-title">
+                    Execução de Calibração Metrológica & Emissão de Certificado
+                  </h3>
+                  <p className="rarus-modal-subtitle">
+                    Ensaio metrológico de conformidade, registro RBC e geração de laudo oficial
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                className="rarus-modal-close-btn"
+                onClick={() => setModalNovaCalibracao(false)}
+                title="Fechar modal"
+              >
+                <X size={18} />
+              </button>
             </div>
+
             <form onSubmit={handleEmitirCertificado}>
               <div className="rarus-modal-body">
-                {/* Seleção do Relato */}
-                <div className="rarus-form-row">
-                  <div className="rarus-form-group">
-                    <label>Modelo de Relato Metrológico:</label>
+                <div className="form-grid">
+                  {/* Seleção do Relato */}
+                  <div className="form-group col-7">
+                    <label className="form-label">
+                      Modelo de Relato Metrológico <span style={{ color: 'var(--color-danger, #ef4444)' }}>*</span>
+                    </label>
                     <select
+                      className="form-select"
                       value={relatoEscolhido?.id}
                       onChange={(e) => {
                         const r = relatos.find((rel) => rel.id === e.target.value);
@@ -279,99 +306,147 @@ export const CalibracoesView: React.FC = () => {
                     >
                       {relatos.map((r) => (
                         <option key={r.id} value={r.id}>
-                          {r.tipoEquipamento} - {r.tituloRelato}
+                          {r.tipoEquipamento} — {r.tituloRelato}
                         </option>
                       ))}
                     </select>
                   </div>
 
-                  <div className="rarus-form-group">
-                    <label>Padrão Basal Exigido (RBC):</label>
-                    <input value="TH-01 (Termohigrômetro Testo 625 - Válido até 01/09/2028)" disabled />
-                  </div>
-                </div>
-
-                {/* Dados da OS e Técnico */}
-                <div className="rarus-form-row">
-                  <div className="rarus-form-group">
-                    <label>Ordem de Serviço:</label>
-                    <input value={`OS #${osNumero}`} disabled />
-                  </div>
-                  <div className="rarus-form-group">
-                    <label>Técnico Executor:</label>
-                    <input value={`${tecnicoNome} (Habilitado GEHAKA)`} disabled />
-                  </div>
-                </div>
-
-                {/* Equipamento */}
-                <div className="rarus-form-row">
-                  <div className="rarus-form-group">
-                    <label>Equipamento:</label>
-                    <input value={`${equipamentoModelo} - Série: ${equipamentoSerie}`} disabled />
-                  </div>
-                  <div className="rarus-form-group">
-                    <label>Cliente:</label>
-                    <input value={clienteRazao} disabled />
-                  </div>
-                </div>
-
-                {/* Tabela de Coleta do Relato */}
-                <div
-                  style={{
-                    marginTop: 12,
-                    padding: '14px',
-                    background: 'var(--bg-app)',
-                    borderRadius: 'var(--radius-md)',
-                    border: '1px solid var(--border-subtle)',
-                  }}
-                >
-                  <div style={{ fontSize: '12px', fontWeight: 700, color: 'var(--rarus-navy)', marginBottom: 10 }}>
-                    COLETA DE DADOS DO ENSAIO (CONFORME RELATO GEHAKA):
+                  <div className="form-group col-5">
+                    <label className="form-label">Padrão Basal Exigido (RBC)</label>
+                    <input
+                      className="form-input"
+                      value="TH-01 (Termohigrômetro Testo 625 - Válido até 01/09/2028)"
+                      readOnly
+                    />
                   </div>
 
-                  <div className="rarus-form-row">
-                    <div className="rarus-form-group">
-                      <label>Temperatura Ambiente (°C):</label>
-                      <input
-                        type="number"
-                        step="0.1"
-                        value={tempAmbiente}
-                        onChange={(e) => setTempAmbiente(e.target.value)}
-                        required
-                      />
-                    </div>
-                    <div className="rarus-form-group">
-                      <label>Umidade Relativa (%UR):</label>
-                      <input
-                        type="number"
-                        step="0.1"
-                        value={umidAmbiente}
-                        onChange={(e) => setUmidAmbiente(e.target.value)}
-                        required
-                      />
-                    </div>
+                  {/* Dados da OS e Técnico */}
+                  <div className="form-group col-4">
+                    <label className="form-label">Ordem de Serviço</label>
+                    <input className="form-input" value={`OS #${osNumero}`} readOnly />
+                  </div>
+                  <div className="form-group col-8">
+                    <label className="form-label">Técnico Executor Habilitado</label>
+                    <input className="form-input" value={`${tecnicoNome} (Habilitado GEHAKA)`} readOnly />
                   </div>
 
-                  <div className="rarus-form-row">
-                    <div className="rarus-form-group">
-                      <label>Ponto 13,0% - Leitura Observada (%):</label>
-                      <input
-                        type="number"
-                        step="0.1"
-                        value={leitura13}
-                        onChange={(e) => setLeitura13(e.target.value)}
-                        required
-                      />
-                    </div>
-                    <div className="rarus-form-group">
-                      <label>Ponto 20,0% - Leitura Observada (%):</label>
-                      <input
-                        type="number"
-                        step="0.1"
-                        value={leitura20}
-                        onChange={(e) => setLeitura20(e.target.value)}
-                        required
-                      />
+                  {/* Equipamento e Cliente */}
+                  <div className="form-group col-6">
+                    <label className="form-label">Equipamento em Calibração</label>
+                    <input className="form-input" value={`${equipamentoModelo} — Série: ${equipamentoSerie}`} readOnly />
+                  </div>
+                  <div className="form-group col-6">
+                    <label className="form-label">Cliente / Proprietário</label>
+                    <input className="form-input" value={clienteRazao} readOnly />
+                  </div>
+
+                  {/* Card de Coleta de Dados do Ensaio */}
+                  <div className="col-12" style={{ marginTop: '8px' }}>
+                    <div
+                      style={{
+                        padding: '16px',
+                        backgroundColor: 'var(--color-primary-50, #f8fafc)',
+                        borderRadius: 'var(--radius-md)',
+                        border: '1px solid var(--color-border-subtle, #e2e8f0)',
+                      }}
+                    >
+                      <div
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          marginBottom: '12px',
+                          paddingBottom: '8px',
+                          borderBottom: '1px solid var(--color-border-subtle, #e2e8f0)',
+                        }}
+                      >
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <FileCheck size={16} color="var(--color-primary-500, #2563eb)" />
+                          <span
+                            style={{
+                              fontSize: '12px',
+                              fontWeight: 700,
+                              color: 'var(--color-text-main, #0f172a)',
+                              letterSpacing: '0.3px',
+                            }}
+                          >
+                            COLETA DE DADOS DO ENSAIO (CONFORME RELATO GEHAKA)
+                          </span>
+                        </div>
+                        <span
+                          style={{
+                            fontSize: '10.5px',
+                            fontWeight: 600,
+                            padding: '2px 8px',
+                            borderRadius: '12px',
+                            backgroundColor: '#dbeafe',
+                            color: '#1e40af',
+                          }}
+                        >
+                          Ensaio Normativo
+                        </span>
+                      </div>
+
+                      <div className="form-grid">
+                        <div className="form-group col-6">
+                          <label className="form-label">
+                            Temperatura Ambiente (°C) <span style={{ color: 'var(--color-danger, #ef4444)' }}>*</span>
+                          </label>
+                          <input
+                            type="number"
+                            step="0.1"
+                            className="form-input"
+                            value={tempAmbiente}
+                            onChange={(e) => setTempAmbiente(e.target.value)}
+                            placeholder="Ex: 22.5"
+                            required
+                          />
+                        </div>
+                        <div className="form-group col-6">
+                          <label className="form-label">
+                            Umidade Relativa (%UR) <span style={{ color: 'var(--color-danger, #ef4444)' }}>*</span>
+                          </label>
+                          <input
+                            type="number"
+                            step="0.1"
+                            className="form-input"
+                            value={umidAmbiente}
+                            onChange={(e) => setUmidAmbiente(e.target.value)}
+                            placeholder="Ex: 53.0"
+                            required
+                          />
+                        </div>
+
+                        <div className="form-group col-6">
+                          <label className="form-label">
+                            Ponto 13,0% — Leitura Observada (%) <span style={{ color: 'var(--color-danger, #ef4444)' }}>*</span>
+                          </label>
+                          <input
+                            type="number"
+                            step="0.1"
+                            className="form-input"
+                            value={leitura13}
+                            onChange={(e) => setLeitura13(e.target.value)}
+                            placeholder="Ex: 13.1"
+                            required
+                          />
+                        </div>
+                        <div className="form-group col-6">
+                          <label className="form-label">
+                            Ponto 20,0% — Leitura Observada (%) <span style={{ color: 'var(--color-danger, #ef4444)' }}>*</span>
+                          </label>
+                          <input
+                            type="number"
+                            step="0.1"
+                            className="form-input"
+                            value={leitura20}
+                            onChange={(e) => setLeitura20(e.target.value)}
+                            placeholder="Ex: 19.9"
+                            required
+                          />
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -386,7 +461,8 @@ export const CalibracoesView: React.FC = () => {
                   Cancelar
                 </button>
                 <button type="submit" className="btn btn-primary">
-                  Assinar & Emitir Certificado
+                  <Award size={15} />
+                  <span>Assinar & Emitir Certificado</span>
                 </button>
               </div>
             </form>

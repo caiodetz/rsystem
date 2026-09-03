@@ -1491,6 +1491,135 @@ button.rarus-nav-item.active,
   overflow: hidden;
 }
 
+.rarus-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 20px;
+  background-color: var(--color-bg-surface);
+  border-bottom: 1px solid var(--color-border-subtle);
+}
+
+.rarus-modal-header-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.rarus-modal-icon-badge {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-md);
+  background-color: var(--color-primary-50);
+  color: var(--color-primary-500);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.rarus-modal-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--color-text-main);
+  margin: 0;
+  line-height: 1.25;
+}
+
+.rarus-modal-subtitle {
+  font-size: 11.5px;
+  color: var(--color-text-muted);
+  margin-top: 2px;
+}
+
+.rarus-modal-close-btn {
+  background: transparent;
+  border: none;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  padding: 6px;
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
+}
+
+.rarus-modal-close-btn:hover {
+  background-color: var(--color-primary-50);
+  color: var(--color-text-main);
+}
+
+.rarus-modal-body {
+  padding: 18px 20px;
+  overflow-y: auto;
+  flex: 1;
+  max-height: calc(90vh - 125px);
+}
+
+.rarus-modal-footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 12px 20px;
+  background-color: var(--color-primary-50);
+  border-top: 1px solid var(--color-border-subtle);
+}
+
+/* Fallback e suporte a rarus-form-row e rarus-form-group */
+.rarus-form-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.rarus-form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.rarus-form-group label {
+  font-size: var(--form-label-font-size);
+  font-weight: 600;
+  color: var(--color-text-label);
+}
+
+.rarus-form-group input,
+.rarus-form-group select,
+.rarus-form-group textarea {
+  width: 100%;
+  height: var(--form-input-height);
+  padding: var(--form-input-padding);
+  font-size: var(--table-font-size);
+  font-family: var(--font-family);
+  color: var(--color-text-main);
+  background-color: var(--color-bg-surface);
+  border: 1px solid var(--color-border-input);
+  border-radius: var(--radius-sm);
+  outline: none;
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.03);
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.rarus-form-group input:focus,
+.rarus-form-group select:focus,
+.rarus-form-group textarea:focus {
+  border-color: var(--color-primary-500);
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.15);
+}
+
+.rarus-form-group input:disabled,
+.rarus-form-group input:read-only {
+  background-color: var(--color-primary-50);
+  color: var(--color-text-muted);
+  border-color: var(--color-border-subtle);
+  cursor: default;
+}
+
+
 /* Cabeçalho da Página */
 .rarus-page-header {
   display: flex;
