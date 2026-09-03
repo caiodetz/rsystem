@@ -27,6 +27,8 @@ import {
   Printer,
   Trash2,
   ArrowLeft,
+  ArrowDown,
+  ArrowUp,
   Wrench,
   Clock,
   Boxes,
@@ -40,6 +42,7 @@ import {
   Package,
 } from 'lucide-react';
 import { ModalImpressaoOS } from './components/ModalImpressaoOS';
+import { useTableSortAndResize } from '@/core/hooks/useTableSortAndResize';
 
 const STATUS_OS_LISTA: StatusOS[] = [
   'Aberta',
@@ -77,13 +80,31 @@ export const OrdensServicoView: React.FC = () => {
   const [osParaImprimir, setOsParaImprimir] = useState<OrdemServico | null>(null);
   const urlRestauradaRef = React.useRef(false);
 
-  const handleAbrirModalImpressao = (osAlvo?: OrdemServico | null) => {
-    const osFinal = osAlvo || osSelecionada || (ordens.length > 0 ? ordens[0] : null);
-    if (osFinal) {
-      setOsParaImprimir(osFinal);
-      setModalImpressaoAberto(true);
-    }
-  };
+  // Hook de ordenação por clique no cabeçalho e redimensionamento de colunas por arrasto
+  const {
+    sortKey,
+    sortDirection,
+    handleSort,
+    sortData,
+    columnWidths,
+    handleResizeStart,
+  } = useTableSortAndResize<OrdemServico>({
+    initialSortKey: 'numero',
+    initialSortDirection: 'desc',
+    defaultWidths: {
+      numero: 110,
+      status: 140,
+      tipo: 65,
+      dataAbertura: 105,
+      clienteCodigo: 90,
+      clienteNome: 280,
+      valorTotalGeral: 130,
+      faturamento: 115,
+      acoes: 95,
+    },
+    minColumnWidth: 55,
+  });
+
 
   // Aba ativa do formulário Card (inicializada via URL)
   const [abaForm, setAbaForm] = useState<
@@ -556,6 +577,46 @@ export const OrdensServicoView: React.FC = () => {
     { chave: 'dataProximaCalibracao', titulo: 'Próx. Calibração', width: 120 },
   ];
 
+  const ordensOrdenadas = useMemo(() => {
+    return sortData(ordens, {
+      numero: (o) => o.numero,
+      status: (o) => o.status,
+      tipo: () => 'OS',
+      dataAbertura: (o) => o.dataAbertura,
+      clienteCodigo: () => 'C01800',
+      clienteNome: (o) => o.clienteNome,
+      valorTotalGeral: (o) => o.valorTotalGeral,
+      faturamento: (o) => (o.faturada ? 'Faturado-Atend.' : 'Normal-Pend.'),
+    });
+  }, [ordens, sortData]);
+
+  const handleAbrirModalImpressao = (osAlvo?: OrdemServico | null) => {
+    let osFinal: OrdemServico | null = null;
+    if (osAlvo) {
+      osFinal = osAlvo;
+    } else if (osSelecionada) {
+      osFinal = {
+        ...osSelecionada,
+        numero: formNumero || osSelecionada.numero,
+        status: (formStatus as any) || osSelecionada.status,
+        clienteNome: formClienteNome || osSelecionada.clienteNome,
+        tecnicoNome: formTecnico || osSelecionada.tecnicoNome,
+        equipamentos: equipamentosSelecionados.length > 0 ? equipamentosSelecionados : osSelecionada.equipamentos,
+        pecas: pecasLancadas.length > 0 ? pecasLancadas : osSelecionada.pecas,
+        valorTotalGeral: totalGeralOS || osSelecionada.valorTotalGeral,
+        valorTotalServicos: totalServicos || osSelecionada.valorTotalServicos,
+        valorTotalPecas: totalPecas || osSelecionada.valorTotalPecas,
+      };
+    } else if (ordens.length > 0) {
+      osFinal = ordens[0];
+    }
+
+    if (osFinal) {
+      setOsParaImprimir(osFinal);
+      setModalImpressaoAberto(true);
+    }
+  };
+
   // SE UMA OS ESTÁ ABERTA PARA VISUALIZAÇÃO/EDIÇÃO:
   if (osSelecionada) {
     return (
@@ -587,15 +648,6 @@ export const OrdensServicoView: React.FC = () => {
               <div style={{ fontSize: '12px', color: 'var(--color-text-muted)' }}>
                 Identificador: <strong>{formIdentificador}</strong> • Série: <strong>OS</strong>
               </div>
-              <button
-                className="btn btn-secondary"
-                onClick={() => handleAbrirModalImpressao(osSelecionada)}
-                style={{ padding: '4px 10px', fontSize: '12px' }}
-                type="button"
-              >
-                <Printer size={14} />
-                <span>Imprimir Documentos / Etiqueta</span>
-              </button>
             </div>
           </div>
 
@@ -1552,19 +1604,176 @@ export const OrdensServicoView: React.FC = () => {
           <table className="rarus-table">
             <thead>
               <tr>
-                <th style={{ width: 110 }}>Nº OS</th>
-                <th style={{ width: 130 }}>Status</th>
-                <th style={{ width: 60 }}>Tipo</th>
-                <th style={{ width: 100 }}>Abertura</th>
-                <th style={{ width: 90 }}>Cliente</th>
-                <th>Razão Social / Dados da OS</th>
-                <th style={{ width: 120 }}>Total Geral</th>
-                <th style={{ width: 100 }}>Faturamento</th>
-                <th style={{ width: 80, textAlign: 'center' }}>Ações</th>
+                <th
+                  style={{ width: columnWidths.numero }}
+                  className="sortable"
+                  onClick={() => handleSort('numero')}
+                  title="Clique para ordenar por Nº OS (decrescente / crescente)"
+                >
+                  <div className="rarus-th-content">
+                    <span>Nº OS</span>
+                    {sortKey === 'numero' && (
+                      <span className="rarus-sort-icon">
+                        {sortDirection === 'desc' ? <ArrowDown size={13} /> : <ArrowUp size={13} />}
+                      </span>
+                    )}
+                  </div>
+                  <div
+                    className="rarus-col-resizer"
+                    onMouseDown={(e) => handleResizeStart('numero', columnWidths.numero, e)}
+                    onClick={(e) => e.stopPropagation()}
+                  />
+                </th>
+                <th
+                  style={{ width: columnWidths.status }}
+                  className="sortable"
+                  onClick={() => handleSort('status')}
+                  title="Clique para ordenar por Status"
+                >
+                  <div className="rarus-th-content">
+                    <span>Status</span>
+                    {sortKey === 'status' && (
+                      <span className="rarus-sort-icon">
+                        {sortDirection === 'desc' ? <ArrowDown size={13} /> : <ArrowUp size={13} />}
+                      </span>
+                    )}
+                  </div>
+                  <div
+                    className="rarus-col-resizer"
+                    onMouseDown={(e) => handleResizeStart('status', columnWidths.status, e)}
+                    onClick={(e) => e.stopPropagation()}
+                  />
+                </th>
+                <th
+                  style={{ width: columnWidths.tipo }}
+                  className="sortable"
+                  onClick={() => handleSort('tipo')}
+                >
+                  <div className="rarus-th-content">
+                    <span>Tipo</span>
+                    {sortKey === 'tipo' && (
+                      <span className="rarus-sort-icon">
+                        {sortDirection === 'desc' ? <ArrowDown size={13} /> : <ArrowUp size={13} />}
+                      </span>
+                    )}
+                  </div>
+                  <div
+                    className="rarus-col-resizer"
+                    onMouseDown={(e) => handleResizeStart('tipo', columnWidths.tipo, e)}
+                    onClick={(e) => e.stopPropagation()}
+                  />
+                </th>
+                <th
+                  style={{ width: columnWidths.dataAbertura }}
+                  className="sortable"
+                  onClick={() => handleSort('dataAbertura')}
+                  title="Clique para ordenar por Data de Abertura"
+                >
+                  <div className="rarus-th-content">
+                    <span>Abertura</span>
+                    {sortKey === 'dataAbertura' && (
+                      <span className="rarus-sort-icon">
+                        {sortDirection === 'desc' ? <ArrowDown size={13} /> : <ArrowUp size={13} />}
+                      </span>
+                    )}
+                  </div>
+                  <div
+                    className="rarus-col-resizer"
+                    onMouseDown={(e) => handleResizeStart('dataAbertura', columnWidths.dataAbertura, e)}
+                    onClick={(e) => e.stopPropagation()}
+                  />
+                </th>
+                <th
+                  style={{ width: columnWidths.clienteCodigo }}
+                  className="sortable"
+                  onClick={() => handleSort('clienteCodigo')}
+                >
+                  <div className="rarus-th-content">
+                    <span>Cliente</span>
+                    {sortKey === 'clienteCodigo' && (
+                      <span className="rarus-sort-icon">
+                        {sortDirection === 'desc' ? <ArrowDown size={13} /> : <ArrowUp size={13} />}
+                      </span>
+                    )}
+                  </div>
+                  <div
+                    className="rarus-col-resizer"
+                    onMouseDown={(e) => handleResizeStart('clienteCodigo', columnWidths.clienteCodigo, e)}
+                    onClick={(e) => e.stopPropagation()}
+                  />
+                </th>
+                <th
+                  style={{ width: columnWidths.clienteNome }}
+                  className="sortable"
+                  onClick={() => handleSort('clienteNome')}
+                  title="Clique para ordenar por Razão Social"
+                >
+                  <div className="rarus-th-content">
+                    <span>Razão Social / Dados da OS</span>
+                    {sortKey === 'clienteNome' && (
+                      <span className="rarus-sort-icon">
+                        {sortDirection === 'desc' ? <ArrowDown size={13} /> : <ArrowUp size={13} />}
+                      </span>
+                    )}
+                  </div>
+                  <div
+                    className="rarus-col-resizer"
+                    onMouseDown={(e) => handleResizeStart('clienteNome', columnWidths.clienteNome, e)}
+                    onClick={(e) => e.stopPropagation()}
+                  />
+                </th>
+                <th
+                  style={{ width: columnWidths.valorTotalGeral }}
+                  className="sortable"
+                  onClick={() => handleSort('valorTotalGeral')}
+                  title="Clique para ordenar por Valor Total"
+                >
+                  <div className="rarus-th-content">
+                    <span>Total Geral</span>
+                    {sortKey === 'valorTotalGeral' && (
+                      <span className="rarus-sort-icon">
+                        {sortDirection === 'desc' ? <ArrowDown size={13} /> : <ArrowUp size={13} />}
+                      </span>
+                    )}
+                  </div>
+                  <div
+                    className="rarus-col-resizer"
+                    onMouseDown={(e) => handleResizeStart('valorTotalGeral', columnWidths.valorTotalGeral, e)}
+                    onClick={(e) => e.stopPropagation()}
+                  />
+                </th>
+                <th
+                  style={{ width: columnWidths.faturamento }}
+                  className="sortable"
+                  onClick={() => handleSort('faturamento')}
+                  title="Clique para ordenar por Faturamento"
+                >
+                  <div className="rarus-th-content">
+                    <span>Faturamento</span>
+                    {sortKey === 'faturamento' && (
+                      <span className="rarus-sort-icon">
+                        {sortDirection === 'desc' ? <ArrowDown size={13} /> : <ArrowUp size={13} />}
+                      </span>
+                    )}
+                  </div>
+                  <div
+                    className="rarus-col-resizer"
+                    onMouseDown={(e) => handleResizeStart('faturamento', columnWidths.faturamento, e)}
+                    onClick={(e) => e.stopPropagation()}
+                  />
+                </th>
+                <th style={{ width: columnWidths.acoes, textAlign: 'center' }}>
+                  <span>Ações</span>
+                  <div
+                    className="rarus-col-resizer"
+                    onMouseDown={(e) => handleResizeStart('acoes', columnWidths.acoes, e)}
+                    onClick={(e) => e.stopPropagation()}
+                  />
+                </th>
               </tr>
             </thead>
             <tbody>
-              {ordens.map((os) => {
+              {ordensOrdenadas.map((os) => {
                 const isSelected = selectedRowId === os.id;
                 return (
                   <tr

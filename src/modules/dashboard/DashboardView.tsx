@@ -18,11 +18,53 @@ import {
   Boxes,
   Users,
   ArrowRight,
+  ArrowDown,
+  ArrowUp,
 } from 'lucide-react';
+import { useTableSortAndResize } from '@/core/hooks/useTableSortAndResize';
 
 export const DashboardView: React.FC = () => {
   const { openTab } = useTabs();
   const [selectedRowId, setSelectedRowId] = useState<string | null>(null);
+
+  const {
+    sortKey,
+    sortDirection,
+    handleSort,
+    sortData,
+    columnWidths,
+    handleResizeStart,
+  } = useTableSortAndResize<(typeof MOCK_ORDENS_SERVICO)[0]>({
+    initialSortKey: 'numero',
+    initialSortDirection: 'desc',
+    defaultWidths: {
+      numero: 95,
+      clienteNome: 220,
+      tipo: 160,
+      equipamentos: 150,
+      tecnicoNome: 130,
+      dataAbertura: 110,
+      dataPrevisao: 110,
+      valorTotalGeral: 115,
+      status: 130,
+      acao: 90,
+    },
+    minColumnWidth: 55,
+  });
+
+  const ordensOrdenadas = React.useMemo(() => {
+    return sortData(MOCK_ORDENS_SERVICO, {
+      numero: (o) => o.numero,
+      clienteNome: (o) => o.clienteNome,
+      tipo: (o) => o.tipo,
+      equipamentos: (o) => o.equipamentos.length,
+      tecnicoNome: (o) => o.tecnicoNome,
+      dataAbertura: (o) => o.dataAbertura,
+      dataPrevisao: (o) => o.dataPrevisao || '',
+      valorTotalGeral: (o) => o.valorTotalGeral,
+      status: (o) => o.status,
+    });
+  }, [sortData]);
 
   const totalEquipamentos = MOCK_EQUIPAMENTOS.length;
   const calibrados = MOCK_EQUIPAMENTOS.filter((e) => e.status === 'Calibrado').length;
@@ -183,20 +225,193 @@ export const DashboardView: React.FC = () => {
           <table className="rarus-table">
             <thead>
               <tr>
-                <th>Nº OS</th>
-                <th>Cliente / Titular</th>
-                <th>Tipo de Serviço</th>
-                <th>Equipamentos Vinculados</th>
-                <th>Técnico Responsável</th>
-                <th>Data Abertura</th>
-                <th>Previsão Entrega</th>
-                <th>Valor Total</th>
-                <th>Status</th>
-                <th>Ação</th>
+                <th
+                  style={{ width: columnWidths.numero }}
+                  className="sortable"
+                  onClick={() => handleSort('numero')}
+                  title="Clique para ordenar por Nº OS"
+                >
+                  <div className="rarus-th-content">
+                    <span>Nº OS</span>
+                    {sortKey === 'numero' && (
+                      <span className="rarus-sort-icon">
+                        {sortDirection === 'desc' ? <ArrowDown size={13} /> : <ArrowUp size={13} />}
+                      </span>
+                    )}
+                  </div>
+                  <div
+                    className="rarus-col-resizer"
+                    onMouseDown={(e) => handleResizeStart('numero', columnWidths.numero, e)}
+                    onClick={(e) => e.stopPropagation()}
+                  />
+                </th>
+                <th
+                  style={{ width: columnWidths.clienteNome }}
+                  className="sortable"
+                  onClick={() => handleSort('clienteNome')}
+                  title="Clique para ordenar por Cliente"
+                >
+                  <div className="rarus-th-content">
+                    <span>Cliente / Titular</span>
+                    {sortKey === 'clienteNome' && (
+                      <span className="rarus-sort-icon">
+                        {sortDirection === 'desc' ? <ArrowDown size={13} /> : <ArrowUp size={13} />}
+                      </span>
+                    )}
+                  </div>
+                  <div
+                    className="rarus-col-resizer"
+                    onMouseDown={(e) => handleResizeStart('clienteNome', columnWidths.clienteNome, e)}
+                    onClick={(e) => e.stopPropagation()}
+                  />
+                </th>
+                <th
+                  style={{ width: columnWidths.tipo }}
+                  className="sortable"
+                  onClick={() => handleSort('tipo')}
+                >
+                  <div className="rarus-th-content">
+                    <span>Tipo de Serviço</span>
+                    {sortKey === 'tipo' && (
+                      <span className="rarus-sort-icon">
+                        {sortDirection === 'desc' ? <ArrowDown size={13} /> : <ArrowUp size={13} />}
+                      </span>
+                    )}
+                  </div>
+                  <div
+                    className="rarus-col-resizer"
+                    onMouseDown={(e) => handleResizeStart('tipo', columnWidths.tipo, e)}
+                    onClick={(e) => e.stopPropagation()}
+                  />
+                </th>
+                <th
+                  style={{ width: columnWidths.equipamentos }}
+                  className="sortable"
+                  onClick={() => handleSort('equipamentos')}
+                >
+                  <div className="rarus-th-content">
+                    <span>Equipamentos Vinculados</span>
+                    {sortKey === 'equipamentos' && (
+                      <span className="rarus-sort-icon">
+                        {sortDirection === 'desc' ? <ArrowDown size={13} /> : <ArrowUp size={13} />}
+                      </span>
+                    )}
+                  </div>
+                  <div
+                    className="rarus-col-resizer"
+                    onMouseDown={(e) => handleResizeStart('equipamentos', columnWidths.equipamentos, e)}
+                    onClick={(e) => e.stopPropagation()}
+                  />
+                </th>
+                <th
+                  style={{ width: columnWidths.tecnicoNome }}
+                  className="sortable"
+                  onClick={() => handleSort('tecnicoNome')}
+                >
+                  <div className="rarus-th-content">
+                    <span>Técnico Responsável</span>
+                    {sortKey === 'tecnicoNome' && (
+                      <span className="rarus-sort-icon">
+                        {sortDirection === 'desc' ? <ArrowDown size={13} /> : <ArrowUp size={13} />}
+                      </span>
+                    )}
+                  </div>
+                  <div
+                    className="rarus-col-resizer"
+                    onMouseDown={(e) => handleResizeStart('tecnicoNome', columnWidths.tecnicoNome, e)}
+                    onClick={(e) => e.stopPropagation()}
+                  />
+                </th>
+                <th
+                  style={{ width: columnWidths.dataAbertura }}
+                  className="sortable"
+                  onClick={() => handleSort('dataAbertura')}
+                  title="Clique para ordenar por Data de Abertura"
+                >
+                  <div className="rarus-th-content">
+                    <span>Data Abertura</span>
+                    {sortKey === 'dataAbertura' && (
+                      <span className="rarus-sort-icon">
+                        {sortDirection === 'desc' ? <ArrowDown size={13} /> : <ArrowUp size={13} />}
+                      </span>
+                    )}
+                  </div>
+                  <div
+                    className="rarus-col-resizer"
+                    onMouseDown={(e) => handleResizeStart('dataAbertura', columnWidths.dataAbertura, e)}
+                    onClick={(e) => e.stopPropagation()}
+                  />
+                </th>
+                <th
+                  style={{ width: columnWidths.dataPrevisao }}
+                  className="sortable"
+                  onClick={() => handleSort('dataPrevisao')}
+                >
+                  <div className="rarus-th-content">
+                    <span>Previsão Entrega</span>
+                    {sortKey === 'dataPrevisao' && (
+                      <span className="rarus-sort-icon">
+                        {sortDirection === 'desc' ? <ArrowDown size={13} /> : <ArrowUp size={13} />}
+                      </span>
+                    )}
+                  </div>
+                  <div
+                    className="rarus-col-resizer"
+                    onMouseDown={(e) => handleResizeStart('dataPrevisao', columnWidths.dataPrevisao, e)}
+                    onClick={(e) => e.stopPropagation()}
+                  />
+                </th>
+                <th
+                  style={{ width: columnWidths.valorTotalGeral }}
+                  className="sortable"
+                  onClick={() => handleSort('valorTotalGeral')}
+                  title="Clique para ordenar por Valor Total"
+                >
+                  <div className="rarus-th-content">
+                    <span>Valor Total</span>
+                    {sortKey === 'valorTotalGeral' && (
+                      <span className="rarus-sort-icon">
+                        {sortDirection === 'desc' ? <ArrowDown size={13} /> : <ArrowUp size={13} />}
+                      </span>
+                    )}
+                  </div>
+                  <div
+                    className="rarus-col-resizer"
+                    onMouseDown={(e) => handleResizeStart('valorTotalGeral', columnWidths.valorTotalGeral, e)}
+                    onClick={(e) => e.stopPropagation()}
+                  />
+                </th>
+                <th
+                  style={{ width: columnWidths.status }}
+                  className="sortable"
+                  onClick={() => handleSort('status')}
+                >
+                  <div className="rarus-th-content">
+                    <span>Status</span>
+                    {sortKey === 'status' && (
+                      <span className="rarus-sort-icon">
+                        {sortDirection === 'desc' ? <ArrowDown size={13} /> : <ArrowUp size={13} />}
+                      </span>
+                    )}
+                  </div>
+                  <div
+                    className="rarus-col-resizer"
+                    onMouseDown={(e) => handleResizeStart('status', columnWidths.status, e)}
+                    onClick={(e) => e.stopPropagation()}
+                  />
+                </th>
+                <th style={{ width: columnWidths.acao, textAlign: 'center' }}>
+                  <span>Ação</span>
+                  <div
+                    className="rarus-col-resizer"
+                    onMouseDown={(e) => handleResizeStart('acao', columnWidths.acao, e)}
+                    onClick={(e) => e.stopPropagation()}
+                  />
+                </th>
               </tr>
             </thead>
             <tbody>
-              {MOCK_ORDENS_SERVICO.map((os) => {
+              {ordensOrdenadas.map((os) => {
                 const isSelected = selectedRowId === os.id;
                 return (
                   <tr

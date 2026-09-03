@@ -900,6 +900,7 @@ button.rarus-nav-item.active,
   width: 100%;
   border-collapse: collapse;
   text-align: left;
+  table-layout: auto;
 }
 
 .rarus-table th {
@@ -912,6 +913,67 @@ button.rarus-nav-item.active,
   background-color: #FAFAFA;
   border-bottom: 1px solid var(--color-border-subtle);
   white-space: nowrap;
+  position: relative;
+  user-select: none;
+  height: 36px;
+  vertical-align: middle;
+}
+
+.rarus-table th.sortable {
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.rarus-table th.sortable:hover {
+  background-color: #F1F5F9;
+  color: var(--color-text-main);
+}
+
+.rarus-th-content {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.rarus-sort-icon {
+  display: inline-flex;
+  align-items: center;
+  color: var(--color-primary-500);
+  font-size: 11px;
+  flex-shrink: 0;
+  transition: transform 0.15s ease;
+}
+
+/* Alça de Redimensionamento de Coluna por Arrasto */
+.rarus-col-resizer {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 8px;
+  height: 100%;
+  cursor: col-resize;
+  user-select: none;
+  z-index: 10;
+  background-color: transparent;
+  transition: background-color 0.15s ease;
+}
+
+.rarus-col-resizer:hover,
+.rarus-col-resizer.resizing {
+  background-color: var(--color-primary-500);
+  opacity: 0.8;
+}
+
+/* Padronização de Linhas e Células */
+.rarus-table tbody tr {
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+  user-select: none;
+  height: 38px;
+  border-bottom: 1px solid var(--color-border-subtle);
 }
 
 .rarus-table td {
@@ -920,12 +982,6 @@ button.rarus-nav-item.active,
   color: var(--color-text-main);
   border-bottom: 1px solid var(--color-border-subtle);
   vertical-align: middle;
-}
-
-.rarus-table tbody tr {
-  cursor: pointer;
-  transition: background-color 0.15s ease;
-  user-select: none;
 }
 
 .rarus-table tbody tr:hover:not(.rarus-row-selected) {
@@ -940,6 +996,80 @@ button.rarus-nav-item.active,
 .rarus-table tbody tr.rarus-row-selected td {
   color: #0F172A !important;
   font-weight: 500;
+}
+
+/* ==========================================================================
+   COMPONENTES DE LOADING & SKELETON (FEEDBACK VISUAL MODERNO)
+   ========================================================================== */
+.rarus-loading-overlay {
+  position: absolute;
+  inset: 0;
+  background-color: rgba(255, 255, 255, 0.82);
+  backdrop-filter: blur(3px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 50;
+  gap: 12px;
+  border-radius: inherit;
+  animation: rarusFadeIn 0.15s ease-in-out;
+}
+
+.rarus-loading-overlay.dark {
+  background-color: rgba(15, 23, 42, 0.85);
+  color: #F8FAFC;
+}
+
+.rarus-spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid rgba(37, 99, 235, 0.18);
+  border-top-color: var(--color-primary-500);
+  border-radius: 50%;
+  animation: rarusSpin 0.75s linear infinite;
+}
+
+.rarus-spinner-sm {
+  width: 18px;
+  height: 18px;
+  border-width: 2px;
+}
+
+.rarus-loading-text {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--color-text-main);
+  letter-spacing: -0.1px;
+}
+
+.rarus-loading-overlay.dark .rarus-loading-text {
+  color: #FFFFFF;
+}
+
+@keyframes rarusSpin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+.rarus-skeleton {
+  background: linear-gradient(90deg, #F1F5F9 25%, #E2E8F0 50%, #F1F5F9 75%);
+  background-size: 200% 100%;
+  animation: rarusSkeletonWave 1.5s infinite;
+  border-radius: var(--radius-sm);
+}
+
+@keyframes rarusSkeletonWave {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
 }
 
 /* ==========================================================================

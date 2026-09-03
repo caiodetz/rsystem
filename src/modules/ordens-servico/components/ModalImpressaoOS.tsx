@@ -379,8 +379,22 @@ export const ModalImpressaoOS: React.FC<ModalImpressaoOSProps> = ({
                 justifyContent: 'center',
                 padding: '24px',
                 backgroundColor: '#334155',
+                position: 'relative',
               }}
             >
+              {/* FEEDBACK DE LOADING ELEGANTE */}
+              {carregando && (
+                <div className="rarus-loading-overlay dark" style={{ zIndex: 20 }}>
+                  <div className="rarus-spinner" />
+                  <span className="rarus-loading-text" style={{ color: '#38bdf8', fontSize: '13px' }}>
+                    Carregando modelo e gerando documento...
+                  </span>
+                  <span style={{ fontSize: '11px', color: '#94a3b8' }}>
+                    Processando tags, dados metrológicos e QR Code de rastreio
+                  </span>
+                </div>
+              )}
+
               <div
                 style={{
                   transform: `scale(${zoom})`,
@@ -392,6 +406,9 @@ export const ModalImpressaoOS: React.FC<ModalImpressaoOSProps> = ({
                   boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.4), 0 10px 10px -5px rgba(0, 0, 0, 0.2)',
                   borderRadius: '2px',
                   overflow: 'hidden',
+                  opacity: carregando ? 0.4 : 1,
+                  transitionProperty: 'opacity, transform',
+                  transitionDuration: '0.2s',
                 }}
               >
                 <iframe
