@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { ItemEstoque, EstoqueLocal, MovimentacaoEstoque } from '@/core/types';
 import { EstoqueService } from '@/core/services/estoqueService';
+import { getUrlParam, updateUrlParams } from '@/core/utils/urlParams';
 import {
   Boxes,
   ArrowLeftRight,
@@ -21,10 +22,20 @@ import {
 
 export const EstoqueView: React.FC = () => {
   const [locais, setLocais] = useState<EstoqueLocal[]>([]);
-  const [localSelecionadoId, setLocalSelecionadoId] = useState<string>('');
+  const [localSelecionadoId, setLocalSelecionadoId] = useState<string>(() => getUrlParam('local') || '');
   const [itens, setItens] = useState<ItemEstoque[]>([]);
-  const [busca, setBusca] = useState('');
-  const [filtroTipo, setFiltroTipo] = useState<string>('todos');
+  const [busca, setBusca] = useState<string>(() => getUrlParam('busca') || '');
+  const [filtroTipo, setFiltroTipo] = useState<string>(() => getUrlParam('tipo') || 'todos');
+  const [selectedRowId, setSelectedRowId] = useState<string | null>(null);
+
+  const handleRowClick = (it: ItemEstoque) => {
+    if (selectedRowId === it.id) {
+      setTransfPecaCodigo(it.codigo);
+      setModalTransferencia(true);
+    } else {
+      setSelectedRowId(it.id);
+    }
+  };
 
   // Modais
   const [modalTransferencia, setModalTransferencia] = useState(false);
@@ -55,7 +66,10 @@ export const EstoqueView: React.FC = () => {
   const carregarLocais = async () => {
     const locs = await EstoqueService.listarLocais();
     setLocais(locs);
-    if (locs.length > 0 && !localSelecionadoId) {
+    const paramLocal = getUrlParam('local');
+    if (paramLocal && locs.some((l) => l.id === paramLocal)) {
+      setLocalSelecionadoId(paramLocal);
+    } else if (locs.length > 0 && !localSelecionadoId) {
       setLocalSelecionadoId(locs[0].id);
     }
   };
@@ -173,7 +187,10 @@ export const EstoqueView: React.FC = () => {
               <button
                 key={loc.id}
                 className={`rarus-filter-tab-pill ${isSelected ? 'active' : ''}`}
-                onClick={() => setLocalSelecionadoId(loc.id)}
+                onClick={() => {
+                  setLocalSelecionadoId(loc.id);
+                  updateUrlParams({ local: loc.id });
+                }}
               >
                 <span>{loc.nome}</span>
                 <span className="count">
@@ -190,7 +207,11 @@ export const EstoqueView: React.FC = () => {
             <input
               placeholder="Buscar por código, descrição ou modelo de peça..."
               value={busca}
-              onChange={(e) => setBusca(e.target.value)}
+              onChange={(e) => {
+                const val = e.target.value;
+                setBusca(val);
+                updateUrlParams({ busca: val || null });
+              }}
             />
           </div>
 
@@ -199,7 +220,11 @@ export const EstoqueView: React.FC = () => {
               className="form-select"
               style={{ width: 'auto' }}
               value={filtroTipo}
-              onChange={(e) => setFiltroTipo(e.target.value)}
+              onChange={(e) => {
+                const val = e.target.value;
+                setFiltroTipo(val);
+                updateUrlParams({ tipo: val !== 'todos' ? val : null });
+              }}
             >
               <option value="todos">Todos os Tipos de Item</option>
               <option value="ProdutoPeca">Peça Física (NF-e)</option>
@@ -209,61 +234,69 @@ export const EstoqueView: React.FC = () => {
         </div>
 
         {/* Tabela de Peças com os Nomes e Códigos Reais da Imagem forumalãrio de tranferencia de estoque.jpeg */}
-        <table className="rarus-table">
-          <thead>
-            <tr>
-              <th>Código</th>
-              <th>Descrição do Item / Peça</th>
-              <th>Unidade</th>
-              <th>Tipo Fiscal</th>
-              <th>Saldo Físico</th>
-              <th>Saldo Fiscal</th>
-              <th>Preço Unitário</th>
-              <th>Status Estoque</th>
-            </tr>
-          </thead>
-          <tbody>
-            {itens.map((it) => {
-              const saldoFis = it.saldosPorLocal[localSelecionadoId] || 0;
-              return (
-                <tr key={it.id}>
-                  <td>
-                    <span style={{ fontFamily: 'monospace', fontWeight: 600, color: 'var(--color-primary-500)' }}>
-                      {it.codigo}
-                    </span>
-                  </td>
-                  <td>
-                    <div style={{ fontWeight: 600, color: 'var(--color-text-main)' }}>{it.descricao}</div>
-                    <div style={{ fontSize: '11px', color: 'var(--color-text-muted)' }}>
-                      Compatível GEHAKA G650i / G810 / BG1000
-                    </div>
-                  </td>
-                  <td><span style={{ fontFamily: 'monospace' }}>{it.unidadeMedida || 'UN'}</span></td>
-                  <td>
-                    <span className={`status-badge ${it.tipoItem === 'ProdutoPeca' ? 'neutro' : 'ativo'}`}>
-                      {it.tipoItem === 'ProdutoPeca' ? 'NF-e (Produto)' : 'NFS-e (Serviço)'}
-                    </span>
-                  </td>
-                  <td>
-                    <strong style={{ fontSize: '13.5px', color: saldoFis > 0 ? 'var(--status-success-text)' : 'var(--status-danger-text)' }}>
-                      {saldoFis.toFixed(4)}
-                    </strong>
-                  </td>
-                  <td>
-                    <span style={{ color: 'var(--color-text-muted)' }}>{it.saldoFiscal.toFixed(4)}</span>
-                  </td>
-                  <td>R$ {it.precoVenda.toFixed(2)}</td>
-                  <td>
-                    <span className={`status-badge ${saldoFis > 0 ? 'ativo' : 'inativo'}`}>
-                      <span className="rarus-status-dot" />
-                      {saldoFis > 0 ? 'Disponível' : 'Esgotado'}
-                    </span>
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
+        <div className="rarus-table-container">
+          <table className="rarus-table">
+            <thead>
+              <tr>
+                <th>Código</th>
+                <th>Descrição do Item / Peça</th>
+                <th>Unidade</th>
+                <th>Tipo Fiscal</th>
+                <th>Saldo Físico</th>
+                <th>Saldo Fiscal</th>
+                <th>Preço Unitário</th>
+                <th>Status Estoque</th>
+              </tr>
+            </thead>
+            <tbody>
+              {itens.map((it) => {
+                const saldoFis = it.saldosPorLocal[localSelecionadoId] || 0;
+                const isSelected = selectedRowId === it.id;
+                return (
+                  <tr
+                    key={it.id}
+                    className={isSelected ? 'rarus-row-selected' : ''}
+                    onClick={() => handleRowClick(it)}
+                    title={isSelected ? 'Clique novamente para abrir transferência deste item' : 'Clique para selecionar o item'}
+                  >
+                    <td>
+                      <span style={{ fontFamily: 'monospace', fontWeight: 600, color: 'var(--color-primary-500)' }}>
+                        {it.codigo}
+                      </span>
+                    </td>
+                    <td>
+                      <div style={{ fontWeight: 600, color: 'var(--color-text-main)' }}>{it.descricao}</div>
+                      <div style={{ fontSize: '11px', color: 'var(--color-text-muted)' }}>
+                        Compatível GEHAKA G650i / G810 / BG1000
+                      </div>
+                    </td>
+                    <td><span style={{ fontFamily: 'monospace' }}>{it.unidadeMedida || 'UN'}</span></td>
+                    <td>
+                      <span className={`status-badge ${it.tipoItem === 'ProdutoPeca' ? 'neutro' : 'ativo'}`}>
+                        {it.tipoItem === 'ProdutoPeca' ? 'NF-e (Produto)' : 'NFS-e (Serviço)'}
+                      </span>
+                    </td>
+                    <td>
+                      <strong style={{ fontSize: '13.5px', color: saldoFis > 0 ? 'var(--status-success-text)' : 'var(--status-danger-text)' }}>
+                        {saldoFis.toFixed(4)}
+                      </strong>
+                    </td>
+                    <td>
+                      <span style={{ color: 'var(--color-text-muted)' }}>{it.saldoFiscal.toFixed(4)}</span>
+                    </td>
+                    <td>R$ {it.precoVenda.toFixed(2)}</td>
+                    <td>
+                      <span className={`status-badge ${saldoFis > 0 ? 'ativo' : 'inativo'}`}>
+                        <span className="rarus-status-dot" />
+                        {saldoFis > 0 ? 'Disponível' : 'Esgotado'}
+                      </span>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
       </div>
 
       {/* MODAL DE TRANSFERÊNCIA (BASEADO EM FORUMALÃRIO DE TRANFERENCIA DE ESTOQUE.JPEG) */}

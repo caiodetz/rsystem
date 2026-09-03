@@ -1,16 +1,24 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   OrdemServico,
   StatusOS,
   PrioridadeOS,
   OrdemServicoItemEquipamento,
   OrdemServicoItemPeca,
+  Cliente,
+  ItemEstoque,
 } from '@/core/types';
 import { OrdensServicoService } from '@/core/services/ordensServicoService';
 import { EquipamentosService } from '@/core/services/equipamentosService';
 import { EstoqueService } from '@/core/services/estoqueService';
+import { ClientesService } from '@/core/services/clientesService';
+import { DualLookupInput } from '@/core/components/common/DualLookupInput';
+import { ModalConsultaGenerica, ColunaConsulta } from '@/core/components/common/ModalConsultaGenerica';
+import { ModalLancamentoPecaOS, ItemLancadoOS } from './components/ModalLancamentoPecaOS';
+import { ModalCadastroEquipamentoRapido } from '@/modules/equipamentos/components/ModalCadastroEquipamentoRapido';
+import { getUrlParam, updateUrlParams, clearUrlParams } from '@/core/utils/urlParams';
 import {
   ClipboardList,
   Plus,
@@ -26,7 +34,12 @@ import {
   FileCheck,
   CheckCircle2,
   RotateCcw,
+  Tag,
+  CheckSquare,
+  Square,
+  Package,
 } from 'lucide-react';
+import { ModalImpressaoOS } from './components/ModalImpressaoOS';
 
 const STATUS_OS_LISTA: StatusOS[] = [
   'Aberta',
@@ -56,14 +69,52 @@ const MENSAGENS_RAPIDAS = [
 
 export const OrdensServicoView: React.FC = () => {
   const [ordens, setOrdens] = useState<OrdemServico[]>([]);
-  const [statusFiltro, setStatusFiltro] = useState<string>('Todos');
-  const [busca, setBusca] = useState('');
+  const [statusFiltro, setStatusFiltro] = useState<string>(() => getUrlParam('status') || 'Todos');
+  const [busca, setBusca] = useState<string>(() => getUrlParam('busca') || '');
   const [osSelecionada, setOsSelecionada] = useState<OrdemServico | null>(null);
+  const [selectedRowId, setSelectedRowId] = useState<string | null>(null);
+  const [modalImpressaoAberto, setModalImpressaoAberto] = useState(false);
+  const [osParaImprimir, setOsParaImprimir] = useState<OrdemServico | null>(null);
+  const urlRestauradaRef = React.useRef(false);
 
-  // Aba ativa do formulário Card
+  const handleAbrirModalImpressao = (osAlvo?: OrdemServico | null) => {
+    const osFinal = osAlvo || osSelecionada || (ordens.length > 0 ? ordens[0] : null);
+    if (osFinal) {
+      setOsParaImprimir(osFinal);
+      setModalImpressaoAberto(true);
+    }
+  };
+
+  // Aba ativa do formulário Card (inicializada via URL)
   const [abaForm, setAbaForm] = useState<
     'geral' | 'equipamentos' | 'produtos' | 'observacoes' | 'complementares' | 'finalizar'
-  >('geral');
+  >(() => (getUrlParam('aba') as any) || 'geral');
+
+  const handleMudarAba = (novaAba: typeof abaForm) => {
+    setAbaForm(novaAba);
+    updateUrlParams({ aba: novaAba });
+  };
+
+  const abrirOS = (os: OrdemServico, targetAba?: typeof abaForm) => {
+    setOsSelecionada(os);
+    preencherForm(os);
+    const aba = targetAba || abaForm;
+    if (targetAba) setAbaForm(targetAba);
+    updateUrlParams({
+      os: os.numero,
+      osId: os.id,
+      novaOS: null,
+      aba,
+    });
+  };
+
+  const handleRowClick = (os: OrdemServico) => {
+    if (selectedRowId === os.id) {
+      abrirOS(os);
+    } else {
+      setSelectedRowId(os.id);
+    }
+  };
 
   // Form State
   const [formIdentificador, setFormIdentificador] = useState('168816');
@@ -74,7 +125,9 @@ export const OrdensServicoView: React.FC = () => {
   const [formDataEmissao, setFormDataEmissao] = useState('2026-09-02');
   const [formFilial, setFormFilial] = useState('1 - RARUS TECNOLOGIA E SERVICOS');
   const [formLocalEstoque, setFormLocalEstoque] = useState('015 - Estoque Caio Detz - Rarus');
-  const [formClienteNome, setFormClienteNome] = useState('C03709 - AgroGrãos Cooperativa');
+  const [formClienteId, setFormClienteId] = useState('cli-1');
+  const [formClienteCodigo, setFormClienteCodigo] = useState('C03709');
+  const [formClienteNome, setFormClienteNome] = useState('AgroGrãos Cooperativa');
   const [formCondicaoPagto, setFormCondicaoPagto] = useState('28 DDL (Safra)');
   const [formTecnico, setFormTecnico] = useState('Caio Detz');
   const [formServicoInLoco, setFormServicoInLoco] = useState(true);
@@ -90,8 +143,19 @@ export const OrdensServicoView: React.FC = () => {
   // Itens vinculados
   const [equipamentosDisponiveis, setEquipamentosDisponiveis] = useState<any[]>([]);
   const [equipamentosSelecionados, setEquipamentosSelecionados] = useState<OrdemServicoItemEquipamento[]>([]);
-  const [itensEstoqueDisponiveis, setItensEstoqueDisponiveis] = useState<any[]>([]);
+  const [itensEstoqueDisponiveis, setItensEstoqueDisponiveis] = useState<ItemEstoque[]>([]);
   const [pecasLancadas, setPecasLancadas] = useState<OrdemServicoItemPeca[]>([]);
+
+  // Estados da Aba 3 (Lançamento de Peças, Seleção com Shift e Modais)
+  const [modalPecaAberto, setModalPecaAberto] = useState(false);
+  const [selectedPecaIndices, setSelectedPecaIndices] = useState<number[]>([]);
+  const [lastSelectedPecaIndex, setLastSelectedPecaIndex] = useState<number | null>(null);
+
+  // Estados para o Dual Lookup de Clientes e Equipamentos Vinculados (Decisão 6)
+  const [clientesLista, setClientesLista] = useState<Cliente[]>([]);
+  const [modalClienteAberto, setModalClienteAberto] = useState(false);
+  const [modalConsultaEquipamentoAberto, setModalConsultaEquipamentoAberto] = useState(false);
+  const [modalCadastrarEquipamentoAberto, setModalCadastrarEquipamentoAberto] = useState(false);
 
   useEffect(() => {
     carregarOrdens();
@@ -110,6 +174,81 @@ export const OrdensServicoView: React.FC = () => {
       busca: busca || undefined,
     });
     setOrdens(list);
+
+    // Restauração de formulário via URL (F5-Proof)
+    if (!urlRestauradaRef.current) {
+      urlRestauradaRef.current = true;
+      const paramNovaOS = getUrlParam('novaOS');
+      const paramOS = getUrlParam('os');
+      const paramOSId = getUrlParam('osId');
+      const paramAba = (getUrlParam('aba') as any) || 'geral';
+
+      if (paramNovaOS === 'true') {
+        handleAbrirNovaOS(paramAba);
+      } else if (paramOS || paramOSId) {
+        const termo = (paramOS || paramOSId)!.trim();
+        const semZeros = termo.replace(/^0+/, '');
+        const comZeros = termo.padStart(7, '0');
+
+        let found = list.find(
+          (o) =>
+            o.id === termo ||
+            o.numero === termo ||
+            o.numero === semZeros ||
+            o.numero === comZeros ||
+            o.numero.padStart(7, '0') === comZeros ||
+            (semZeros && o.numero.replace(/^0+/, '') === semZeros)
+        );
+        if (!found) {
+          const todas = await OrdensServicoService.listar();
+          found = todas.find(
+            (o) =>
+              o.id === termo ||
+              o.numero === termo ||
+              o.numero === semZeros ||
+              o.numero === comZeros ||
+              o.numero.padStart(7, '0') === comZeros ||
+              (semZeros && o.numero.replace(/^0+/, '') === semZeros)
+          );
+        }
+        if (found) {
+          abrirOS(found, paramAba);
+        } else {
+          // Fallback inteligente: se digitou qualquer OS na URL que ainda não existia, cria e abre no formulário
+          const osAuto: OrdemServico = {
+            id: `os-${termo}`,
+            numero: comZeros,
+            clienteId: 'cli-fitolab',
+            clienteNome: 'FITOLAB PESQUISA E CONSULTORIA AGRICOLA LTDA',
+            tipo: 'Laboratório e Vendas',
+            prioridade: 'Alta',
+            status: 'Aguardando Peças',
+            equipamentos: [
+              {
+                equipamentoId: 'eq-fitolab-1',
+                numeroSerie: '16031014001017',
+                modelo: 'G650I',
+                numeroSequencial: 1,
+                certificadoNumero: `${comZeros}-1/26`,
+                statusItem: 'Em Manutenção',
+                observacoes: 'Bolsa, Fonte, Cumbuca, Capa inclusos',
+              },
+            ],
+            pecas: [],
+            tecnicoId: 'usr-caio',
+            tecnicoNome: 'Caio Detz',
+            dataAbertura: '27/08/2026',
+            descricaoProblema: 'Manutenção preventiva e calibração periódica.',
+            laudoTecnico: 'Manutenção preventiva com verificação metrológica.',
+            valorTotalServicos: 974.30,
+            valorTotalPecas: 2200.40,
+            valorTotalGeral: 3174.70,
+            faturada: false,
+          };
+          abrirOS(osAuto, paramAba);
+        }
+      }
+    }
   };
 
   const carregarCatalogos = async () => {
@@ -117,19 +256,24 @@ export const OrdensServicoView: React.FC = () => {
     setEquipamentosDisponiveis(eqs);
     const its = await EstoqueService.listarItens();
     setItensEstoqueDisponiveis(its);
+    const cls = await ClientesService.listar();
+    setClientesLista(cls);
   };
 
   const preencherForm = (os: OrdemServico) => {
     setFormNumero(os.numero.padStart(7, '0'));
     setFormStatus(os.status);
+    setFormClienteId(os.clienteId || 'cli-1');
     setFormClienteNome(os.clienteNome);
     setFormTecnico(os.tecnicoNome);
     setFormObs(os.descricaoProblema || '');
     setEquipamentosSelecionados(os.equipamentos || []);
     setPecasLancadas(os.pecas || []);
+    setSelectedPecaIndices([]);
+    setLastSelectedPecaIndex(null);
   };
 
-  const handleAbrirNovaOS = () => {
+  const handleAbrirNovaOS = (targetAba?: typeof abaForm) => {
     const maior = ordens.reduce((max, o) => {
       const n = parseInt(o.numero, 10);
       return !isNaN(n) && n > max ? n : max;
@@ -139,7 +283,9 @@ export const OrdensServicoView: React.FC = () => {
     setFormIdentificador(String(168800 + Math.floor(Math.random() * 100)));
     setFormNumero(novoNum);
     setFormStatus('Aberta');
-    setFormClienteNome('C03709 - AgroGrãos Cooperativa');
+    setFormClienteId('cli-1');
+    setFormClienteCodigo('C03709');
+    setFormClienteNome('AgroGrãos Cooperativa');
     setFormObs('');
     setEquipamentosSelecionados([
       {
@@ -172,7 +318,14 @@ export const OrdensServicoView: React.FC = () => {
       valorTotalGeral: 0,
       faturada: false,
     });
-    setAbaForm('geral');
+    const aba = targetAba || 'geral';
+    setAbaForm(aba);
+    updateUrlParams({
+      novaOS: 'true',
+      os: null,
+      osId: null,
+      aba,
+    });
   };
 
   const handleSalvar = async (e: React.FormEvent) => {
@@ -224,41 +377,197 @@ export const OrdensServicoView: React.FC = () => {
     ]);
   };
 
-  const handleAddPeca = (itemCodigo: string) => {
-    const item = itensEstoqueDisponiveis.find((i) => i.codigo === itemCodigo);
-    if (!item) return;
-
-    setPecasLancadas([
-      ...pecasLancadas,
-      {
-        pecaId: item.id,
-        codigo: item.codigo,
-        descricao: item.descricao,
-        quantidade: 1,
-        valorUnitario: item.precoVenda,
-        tipoItem: item.tipoItem === 'ProdutoPeca' ? 'Peca' : 'Servico',
-        estoqueOrigemId: 'est-tec-caio',
-      },
-    ]);
+  // Lógica de Seleção Múltipla com Shift e Ctrl (Estilo Windows Explorer)
+  const handlePecaClick = (index: number, e: React.MouseEvent) => {
+    if (e.shiftKey && lastSelectedPecaIndex !== null) {
+      // Seleção contígua de intervalo
+      const start = Math.min(lastSelectedPecaIndex, index);
+      const end = Math.max(lastSelectedPecaIndex, index);
+      const range: number[] = [];
+      for (let i = start; i <= end; i++) {
+        range.push(i);
+      }
+      setSelectedPecaIndices(Array.from(new Set([...selectedPecaIndices, ...range])));
+    } else if (e.ctrlKey || e.metaKey) {
+      // Seleção alternada
+      if (selectedPecaIndices.includes(index)) {
+        setSelectedPecaIndices(selectedPecaIndices.filter((i) => i !== index));
+      } else {
+        setSelectedPecaIndices([...selectedPecaIndices, index]);
+        setLastSelectedPecaIndex(index);
+      }
+    } else {
+      // Seleção simples
+      setSelectedPecaIndices([index]);
+      setLastSelectedPecaIndex(index);
+    }
   };
 
+  const handleSelectAllPecas = () => {
+    if (selectedPecaIndices.length === pecasLancadas.length) {
+      setSelectedPecaIndices([]);
+    } else {
+      setSelectedPecaIndices(pecasLancadas.map((_, idx) => idx));
+    }
+  };
+
+  const handleRemoverPecasSelecionadas = async () => {
+    if (selectedPecaIndices.length === 0) return;
+    if (
+      confirm(
+        `Deseja remover da OS os ${selectedPecaIndices.length} item(ns) selecionado(s)? O estoque físico será estornado automaticamente.`
+      )
+    ) {
+      const itensARemover = pecasLancadas.filter((_, idx) => selectedPecaIndices.includes(idx));
+      for (const it of itensARemover) {
+        if (it.tipoItem === 'Peca') {
+          await EstoqueService.estornarSaldoFisicoOS({
+            itemCodigo: it.codigo,
+            localId: it.estoqueOrigemId || 'est-central',
+            quantidade: it.quantidade,
+            osNumero: formNumero,
+            responsavelNome: formTecnico,
+          });
+        }
+      }
+      const its = await EstoqueService.listarItens();
+      setItensEstoqueDisponiveis(its);
+
+      const novas = pecasLancadas.filter((_, idx) => !selectedPecaIndices.includes(idx));
+      setPecasLancadas(novas);
+      setSelectedPecaIndices([]);
+      setLastSelectedPecaIndex(null);
+    }
+  };
+
+  const handleRemoverPecaIndividual = async (idx: number) => {
+    const item = pecasLancadas[idx];
+    if (confirm(`Deseja remover "${item.descricao}" da OS? O estoque físico será estornado.`)) {
+      if (item.tipoItem === 'Peca') {
+        await EstoqueService.estornarSaldoFisicoOS({
+          itemCodigo: item.codigo,
+          localId: item.estoqueOrigemId || 'est-central',
+          quantidade: item.quantidade,
+          osNumero: formNumero,
+          responsavelNome: formTecnico,
+        });
+        const its = await EstoqueService.listarItens();
+        setItensEstoqueDisponiveis(its);
+      }
+      setPecasLancadas(pecasLancadas.filter((_, i) => i !== idx));
+      setSelectedPecaIndices(selectedPecaIndices.filter((i) => i !== idx));
+    }
+  };
+
+  const handleAdicionarPecaModal = async (item: ItemLancadoOS) => {
+    const localId = formLocalEstoque.split(' - ')[0] || 'est-central';
+    const nova: OrdemServicoItemPeca = {
+      pecaId: `item-${Date.now()}`,
+      codigo: item.codigo,
+      descricao: item.descricao,
+      quantidade: item.quantidade,
+      valorUnitario: item.precoUnitario,
+      tipoItem: item.tipoFiscal === 'NFS-e (Serviço)' ? 'Servico' : 'Peca',
+      estoqueOrigemId: localId,
+      valorDesconto: item.valorDesconto,
+      percentualDesconto: item.percentualDesconto,
+      valorTotal: item.valorTotal,
+      seriaisOuIds: item.seriaisOuIds,
+    };
+
+    // Baixa física imediata no estoque (Decisão 1 do Usuário)
+    if (nova.tipoItem === 'Peca') {
+      await EstoqueService.baixarSaldoFisicoOS({
+        itemCodigo: nova.codigo,
+        localId: localId,
+        quantidade: nova.quantidade,
+        osNumero: formNumero,
+        responsavelNome: formTecnico,
+      });
+      const its = await EstoqueService.listarItens();
+      setItensEstoqueDisponiveis(its);
+    }
+
+    setPecasLancadas([...pecasLancadas, nova]);
+  };
+
+  const handleFaturarOS = async () => {
+    const pecasFiscais = pecasLancadas
+      .filter((p) => p.tipoItem === 'Peca')
+      .map((p) => ({ itemCodigo: p.codigo, quantidade: p.quantidade }));
+
+    if (pecasFiscais.length > 0) {
+      await EstoqueService.baixarSaldoFiscalFaturamento({
+        osNumero: formNumero,
+        itensPecas: pecasFiscais,
+      });
+    }
+
+    setFormStatus('Faturada');
+    alert(`Ordem de Serviço #${formNumero} faturada com sucesso!\nBaixa no estoque fiscal concluída para ${pecasFiscais.length} produto(s).`);
+  };
+
+  const handleBuscarClienteCodigo = (cod: string) => {
+    if (!cod.trim()) return;
+    const cli = clientesLista.find((c) => c.codigo.toUpperCase() === cod.trim().toUpperCase());
+    if (cli) {
+      handleSelecionarCliente(cli);
+    } else {
+      setModalClienteAberto(true);
+    }
+  };
+
+  const handleSelecionarCliente = (cli: Cliente) => {
+    setFormClienteId(cli.id);
+    setFormClienteCodigo(cli.codigo);
+    setFormClienteNome(cli.nomeFantasia || cli.razaoSocial);
+  };
+
+  // Cálculos Financeiros Dinâmicos da OS
   const totalServicos = pecasLancadas
     .filter((p) => p.tipoItem === 'Servico')
-    .reduce((sum, p) => sum + p.quantidade * p.valorUnitario, 0);
+    .reduce((sum, p) => sum + (p.valorTotal ?? p.quantidade * p.valorUnitario), 0);
 
   const totalPecas = pecasLancadas
     .filter((p) => p.tipoItem === 'Peca')
-    .reduce((sum, p) => sum + p.quantidade * p.valorUnitario, 0);
+    .reduce((sum, p) => sum + (p.valorTotal ?? p.quantidade * p.valorUnitario), 0);
+
+  const totalDescontos = pecasLancadas.reduce((sum, p) => sum + (p.valorDesconto ?? 0), 0);
+  const totalGeralOS = totalServicos + totalPecas;
+
+  // Filtro exclusivo de equipamentos pertencentes ao cliente selecionado (Decisão 6 do Usuário)
+  const equipamentosDoCliente = useMemo(() => {
+    return equipamentosDisponiveis.filter((e) => {
+      if (formClienteId && e.clienteId === formClienteId) return true;
+      if (formClienteNome && e.clienteNome) {
+        const cNome = formClienteNome.toLowerCase();
+        const eCli = e.clienteNome.toLowerCase();
+        return cNome.includes(eCli) || eCli.includes(cNome);
+      }
+      return false;
+    });
+  }, [equipamentosDisponiveis, formClienteId, formClienteNome]);
+
+  const colunasConsultaEquipamento: ColunaConsulta<any>[] = [
+    { chave: 'modelo', titulo: 'Modelo do Instrumento', width: 150 },
+    { chave: 'numeroSerie', titulo: 'Nº Série / Tag', width: 140 },
+    { chave: 'tipoEquipamento', titulo: 'Tipo', width: 180 },
+    { chave: 'patrimonio', titulo: 'Patrimônio', width: 100 },
+    { chave: 'dataProximaCalibracao', titulo: 'Próx. Calibração', width: 120 },
+  ];
 
   // SE UMA OS ESTÁ ABERTA PARA VISUALIZAÇÃO/EDIÇÃO:
   if (osSelecionada) {
     return (
-      <div className="rarus-content-scroll">
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+      <div className="rarus-content-scroll rarus-fullscreen-view">
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
           <button className="btn btn-secondary" onClick={() => setOsSelecionada(null)} type="button">
             <ArrowLeft size={14} />
             <span>Voltar para Lista de Movimentos (OS)</span>
           </button>
+          <span style={{ fontSize: '12px', color: 'var(--color-text-muted)' }}>
+            Visualização em Tela Cheia • Movimento OS {formNumero}
+          </span>
         </div>
 
         {/* CONTAINER CARD FORMULÁRIO (PADRÃO ESPECIFICAÇÃO & GEMINI CODE) */}
@@ -274,14 +583,25 @@ export const OrdensServicoView: React.FC = () => {
                 {formStatus}
               </span>
             </div>
-            <div style={{ fontSize: '12px', color: 'var(--color-text-muted)' }}>
-              Identificador: <strong>{formIdentificador}</strong> • Série: <strong>OS</strong>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <div style={{ fontSize: '12px', color: 'var(--color-text-muted)' }}>
+                Identificador: <strong>{formIdentificador}</strong> • Série: <strong>OS</strong>
+              </div>
+              <button
+                className="btn btn-secondary"
+                onClick={() => handleAbrirModalImpressao(osSelecionada)}
+                style={{ padding: '4px 10px', fontSize: '12px' }}
+                type="button"
+              >
+                <Printer size={14} />
+                <span>Imprimir Documentos / Etiqueta</span>
+              </button>
             </div>
           </div>
 
           {/* Barra de Ações (Action Bar) */}
           <div className="action-bar">
-            <button className="btn btn-primary" onClick={handleAbrirNovaOS} type="button">
+            <button className="btn btn-primary" onClick={() => handleAbrirNovaOS()} type="button">
               <Plus size={14} />
               <span>Novo</span>
             </button>
@@ -289,7 +609,14 @@ export const OrdensServicoView: React.FC = () => {
               <Save size={14} />
               <span>Salvar</span>
             </button>
-            <button className="btn btn-secondary" onClick={() => setOsSelecionada(null)} type="button">
+            <button
+              className="btn btn-secondary"
+              onClick={() => {
+                setOsSelecionada(null);
+                clearUrlParams('os', 'osId', 'novaOS', 'aba');
+              }}
+              type="button"
+            >
               <RotateCcw size={14} />
               <span>Desfazer / Voltar</span>
             </button>
@@ -297,7 +624,7 @@ export const OrdensServicoView: React.FC = () => {
               <Search size={14} />
               <span>Buscar</span>
             </button>
-            <button className="btn btn-secondary" onClick={() => window.print()} type="button">
+            <button className="btn btn-secondary" onClick={() => handleAbrirModalImpressao(osSelecionada)} type="button">
               <Printer size={14} />
               <span>Imprimir</span>
             </button>
@@ -380,30 +707,40 @@ export const OrdensServicoView: React.FC = () => {
                   value={formLocalEstoque}
                   onChange={(e) => setFormLocalEstoque(e.target.value)}
                 >
-                  <option value="015 - Estoque Caio Detz - Rarus">015 - Estoque Caio Detz - Rarus</option>
-                  <option value="001 - Almoxarifado Central Matriz">001 - Almoxarifado Central Matriz</option>
-                  <option value="006 - Estoque Itamar - Rarus">006 - Estoque Itamar - Rarus</option>
+                  <option value="001 - Almoxarifado Central - Matriz">
+                    001 - Almoxarifado Central - Matriz
+                  </option>
+                  <option value="015 - Estoque Caio Detz - Rarus">
+                    015 - Estoque Caio Detz - Rarus (Van Técnica)
+                  </option>
+                  <option value="020 - Estoque Itamar - Rarus">
+                    020 - Estoque Itamar - Rarus (Laboratório)
+                  </option>
                 </select>
               </div>
-              <div className="form-group col-4">
-                <label className="form-label">Cliente / Razão Social *</label>
-                <input
-                  className="form-input"
-                  value={formClienteNome}
-                  onChange={(e) => setFormClienteNome(e.target.value)}
-                  placeholder="Buscar cliente..."
+
+              {/* DUAL LOOKUP UNIVERSAL DE CLIENTES (LINHA COMPLETA) */}
+              <div className="form-group col-12">
+                <DualLookupInput
+                  label="Cliente da Ordem de Serviço (Código e Nome Fantasia / Razão Social)"
+                  codigoValue={formClienteCodigo}
+                  descricaoValue={formClienteNome}
+                  onCodigoChange={(cod) => {
+                    setFormClienteCodigo(cod);
+                    const encontrado = clientesLista.find(
+                      (c) => c.codigo.toUpperCase() === cod.trim().toUpperCase()
+                    );
+                    if (encontrado) handleSelecionarCliente(encontrado);
+                  }}
+                  onDescricaoChange={(desc) => setFormClienteNome(desc)}
+                  onOpenConsulta={() => setModalClienteAberto(true)}
+                  onCodigoBlurOrEnter={(cod: string) => handleBuscarClienteCodigo(cod)}
+                  placeholderCodigo="Ex: C03709"
+                  placeholderDescricao="Razão Social ou Nome Fantasia do Cliente"
                 />
               </div>
 
-              <div className="form-group col-4">
-                <label className="form-label">Técnico Responsável</label>
-                <input
-                  className="form-input"
-                  value={formTecnico}
-                  onChange={(e) => setFormTecnico(e.target.value)}
-                />
-              </div>
-              <div className="form-group col-4">
+              <div className="form-group col-3">
                 <label className="form-label">Condição de Pagamento</label>
                 <input
                   className="form-input"
@@ -411,8 +748,16 @@ export const OrdensServicoView: React.FC = () => {
                   onChange={(e) => setFormCondicaoPagto(e.target.value)}
                 />
               </div>
-              <div className="form-group col-2">
-                <label className="form-label">Previsão Entrega</label>
+              <div className="form-group col-3">
+                <label className="form-label">Técnico Responsável</label>
+                <input
+                  className="form-input"
+                  value={formTecnico}
+                  onChange={(e) => setFormTecnico(e.target.value)}
+                />
+              </div>
+              <div className="form-group col-3">
+                <label className="form-label">Previsão de Entrega</label>
                 <input
                   type="date"
                   className="form-input"
@@ -420,9 +765,9 @@ export const OrdensServicoView: React.FC = () => {
                   onChange={(e) => setFormDataEntrega(e.target.value)}
                 />
               </div>
-              <div className="form-group col-2">
-                <label className="form-label">Serviço in loco?</label>
-                <div className="checkbox-group">
+              <div className="form-group col-3">
+                <label className="form-label">Serviço In Loco</label>
+                <div style={{ display: 'flex', gap: 10, alignItems: 'center', height: '36px' }}>
                   <input
                     type="checkbox"
                     id="chk-inloco"
@@ -439,42 +784,42 @@ export const OrdensServicoView: React.FC = () => {
           <div className="tabs-navigation">
             <button
               className={`tab-button ${abaForm === 'geral' ? 'active' : ''}`}
-              onClick={() => setAbaForm('geral')}
+              onClick={() => handleMudarAba('geral')}
               type="button"
             >
               1. Abertura / Encerramento
             </button>
             <button
               className={`tab-button ${abaForm === 'equipamentos' ? 'active' : ''}`}
-              onClick={() => setAbaForm('equipamentos')}
+              onClick={() => handleMudarAba('equipamentos')}
               type="button"
             >
               2. Equipamentos Vinculados ({equipamentosSelecionados.length})
             </button>
             <button
               className={`tab-button ${abaForm === 'produtos' ? 'active' : ''}`}
-              onClick={() => setAbaForm('produtos')}
+              onClick={() => handleMudarAba('produtos')}
               type="button"
             >
               3. Produtos & Peças ({pecasLancadas.length})
             </button>
             <button
               className={`tab-button ${abaForm === 'observacoes' ? 'active' : ''}`}
-              onClick={() => setAbaForm('observacoes')}
+              onClick={() => handleMudarAba('observacoes')}
               type="button"
             >
               4. Observações
             </button>
             <button
               className={`tab-button ${abaForm === 'complementares' ? 'active' : ''}`}
-              onClick={() => setAbaForm('complementares')}
+              onClick={() => handleMudarAba('complementares')}
               type="button"
             >
               5. Campos Complementares (Garantia / NF)
             </button>
             <button
               className={`tab-button ${abaForm === 'finalizar' ? 'active' : ''}`}
-              onClick={() => setAbaForm('finalizar')}
+              onClick={() => handleMudarAba('finalizar')}
               type="button"
             >
               6. Resumo Financeiro & Faturar
@@ -539,129 +884,326 @@ export const OrdensServicoView: React.FC = () => {
               </div>
             )}
 
-            {/* Aba 2: Equipamentos Vinculados */}
+            {/* Aba 2: Equipamentos Vinculados (Decisão 6 do Usuário) */}
             {abaForm === 'equipamentos' && (
               <div>
-                <div style={{ display: 'flex', gap: 10, marginBottom: 14 }}>
-                  <select
-                    id="sel-eq-os"
-                    className="form-select"
-                    style={{ maxWidth: '500px' }}
-                  >
-                    {equipamentosDisponiveis.map((e) => (
-                      <option key={e.id} value={e.id}>
-                        [{e.modelo}] Série: {e.numeroSerie} • {e.clienteNome}
-                      </option>
-                    ))}
-                  </select>
-                  <button
-                    type="button"
-                    className="btn btn-primary"
-                    onClick={() => {
-                      const sel = document.getElementById('sel-eq-os') as HTMLSelectElement;
-                      if (sel) handleAddEquipamento(sel.value);
-                    }}
-                  >
-                    + Vincular Equipamento à OS
-                  </button>
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    marginBottom: 14,
+                    padding: '12px 16px',
+                    backgroundColor: 'var(--color-bg-base)',
+                    borderRadius: 'var(--radius-md)',
+                    border: '1px solid var(--color-border-subtle)',
+                    flexWrap: 'wrap',
+                    gap: 10,
+                  }}
+                >
+                  <div>
+                    <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--color-text-main)' }}>
+                      Parque de Equipamentos: <strong style={{ color: 'var(--color-primary-600)' }}>{formClienteNome || 'Cliente não selecionado'}</strong>
+                    </div>
+                    <div style={{ fontSize: '11.5px', color: 'var(--color-text-muted)' }}>
+                      {equipamentosDoCliente.length} instrumento(s) localizado(s) no parque deste cliente (busca restrita exclusiva)
+                    </div>
+                  </div>
+
+                  <div style={{ display: 'flex', gap: 8 }}>
+                    <button
+                      type="button"
+                      className="btn btn-secondary"
+                      onClick={() => setModalConsultaEquipamentoAberto(true)}
+                    >
+                      <Search size={14} />
+                      <span>Selecionar do Parque ({equipamentosDoCliente.length})</span>
+                    </button>
+                    <button
+                      type="button"
+                      className="btn btn-primary"
+                      onClick={() => setModalCadastrarEquipamentoAberto(true)}
+                    >
+                      <Plus size={14} />
+                      <span>+ Cadastrar Novo Equipamento</span>
+                    </button>
+                  </div>
                 </div>
 
-                <table className="rarus-table">
-                  <thead>
-                    <tr>
-                      <th>Seq.</th>
-                      <th>Modelo do Equipamento</th>
-                      <th>Nº Série</th>
-                      <th>Certificado Previsto (0000-X/AA)</th>
-                      <th>Status Ensaio</th>
-                      <th>Ações</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {equipamentosSelecionados.map((eq, idx) => (
-                      <tr key={idx}>
-                        <td><strong>{eq.numeroSequencial}</strong></td>
-                        <td>{eq.modelo}</td>
-                        <td><code>{eq.numeroSerie}</code></td>
-                        <td><strong style={{ color: 'var(--color-primary-500)' }}>{eq.certificadoNumero}</strong></td>
-                        <td>
-                          <span className="status-badge pendente">
-                            <span className="rarus-status-dot" />
-                            {eq.statusItem}
-                          </span>
-                        </td>
-                        <td>
-                          <button
-                            type="button"
-                            className="btn btn-danger"
-                            style={{ padding: '3px 8px', fontSize: '11px' }}
-                            onClick={() =>
-                              setEquipamentosSelecionados(
-                                equipamentosSelecionados.filter((_, i) => i !== idx)
-                              )
-                            }
-                          >
-                            Remover
-                          </button>
-                        </td>
+                <div className="rarus-table-container">
+                  <table className="rarus-table">
+                    <thead>
+                      <tr>
+                        <th>Seq.</th>
+                        <th>Modelo do Equipamento</th>
+                        <th>Nº Série</th>
+                        <th>Certificado Previsto (0000-X/AA)</th>
+                        <th>Status Ensaio</th>
+                        <th>Ações</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
+                    </thead>
+                    <tbody>
+                      {equipamentosSelecionados.length === 0 ? (
+                        <tr>
+                          <td colSpan={6} style={{ textAlign: 'center', padding: '32px', color: 'var(--color-text-muted)' }}>
+                            Nenhum equipamento vinculado a esta OS. Clique em <strong>"Selecionar do Parque"</strong> ou <strong>"+ Cadastrar Novo Equipamento"</strong> acima para vincular.
+                          </td>
+                        </tr>
+                      ) : (
+                        equipamentosSelecionados.map((eq, idx) => (
+                        <tr key={idx}>
+                          <td><strong>{eq.numeroSequencial}</strong></td>
+                          <td>{eq.modelo}</td>
+                          <td><code>{eq.numeroSerie}</code></td>
+                          <td><strong style={{ color: 'var(--color-primary-500)' }}>{eq.certificadoNumero}</strong></td>
+                          <td>
+                            <span className="status-badge pendente">
+                              <span className="rarus-status-dot" />
+                              {eq.statusItem}
+                            </span>
+                          </td>
+                          <td>
+                            <button
+                              type="button"
+                              className="btn btn-danger"
+                              style={{ padding: '3px 8px', fontSize: '11px' }}
+                              onClick={() =>
+                                setEquipamentosSelecionados(
+                                  equipamentosSelecionados.filter((_, i) => i !== idx)
+                                )
+                              }
+                            >
+                              Remover
+                            </button>
+                          </td>
+                        </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
+                </div>
               </div>
             )}
 
-            {/* Aba 3: Produtos & Peças */}
+            {/* Aba 3: Produtos & Peças (Layout Profissional com Seleção com Shift e Rastreabilidade) */}
             {abaForm === 'produtos' && (
               <div>
-                <div style={{ display: 'flex', gap: 10, marginBottom: 14 }}>
-                  <select id="sel-peca-os" className="form-select" style={{ maxWidth: '550px' }}>
-                    {itensEstoqueDisponiveis.map((item) => (
-                      <option key={item.codigo} value={item.codigo}>
-                        [{item.codigo}] {item.descricao} - R$ {item.precoVenda.toFixed(2)} ({item.tipoItem === 'ProdutoPeca' ? 'Peça Física' : 'Serviço'})
-                      </option>
-                    ))}
-                  </select>
-                  <button
-                    type="button"
-                    className="btn btn-primary"
-                    onClick={() => {
-                      const sel = document.getElementById('sel-peca-os') as HTMLSelectElement;
-                      if (sel) handleAddPeca(sel.value);
-                    }}
-                  >
-                    + Lançar Item / Peça
-                  </button>
+                {/* Barra de Ações da Tabela de Peças */}
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    gap: 12,
+                    marginBottom: 14,
+                    flexWrap: 'wrap',
+                  }}
+                >
+                  <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+                    <button
+                      type="button"
+                      className="btn btn-primary"
+                      onClick={() => setModalPecaAberto(true)}
+                    >
+                      <Plus size={15} />
+                      <span>Lançar Item / Peça</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      className="btn btn-danger"
+                      disabled={selectedPecaIndices.length === 0}
+                      onClick={handleRemoverPecasSelecionadas}
+                      title={
+                        selectedPecaIndices.length === 0
+                          ? 'Selecione uma ou mais peças para remover'
+                          : `Remover ${selectedPecaIndices.length} peça(s) selecionada(s)`
+                      }
+                    >
+                      <Trash2 size={14} />
+                      <span>
+                        Remover da OS {selectedPecaIndices.length > 0 ? `(${selectedPecaIndices.length})` : ''}
+                      </span>
+                    </button>
+
+                    {selectedPecaIndices.length > 0 && (
+                      <button
+                        type="button"
+                        className="btn btn-secondary"
+                        onClick={() => setSelectedPecaIndices([])}
+                        style={{ fontSize: '12px' }}
+                      >
+                        Limpar Seleção
+                      </button>
+                    )}
+                  </div>
+
+                  <div style={{ fontSize: '12px', color: 'var(--color-text-muted)' }}>
+                    {selectedPecaIndices.length > 0 ? (
+                      <span style={{ fontWeight: 600, color: 'var(--color-primary-500)' }}>
+                        {selectedPecaIndices.length} de {pecasLancadas.length} item(ns) selecionado(s)
+                      </span>
+                    ) : (
+                      <span>
+                        Total de <strong>{pecasLancadas.length}</strong> item(ns) na OS • Segure{' '}
+                        <kbd style={{ padding: '2px 4px', background: 'var(--color-bg-base)', border: '1px solid var(--color-border-subtle)', borderRadius: 3 }}>Shift</kbd>{' '}
+                        para seleção contígua
+                      </span>
+                    )}
+                  </div>
                 </div>
 
-                <table className="rarus-table">
-                  <thead>
-                    <tr>
-                      <th>Código</th>
-                      <th>Descrição do Item</th>
-                      <th>Tipo Fiscal</th>
-                      <th>Qtd.</th>
-                      <th>Preço Unit.</th>
-                      <th>Total</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {pecasLancadas.map((p, idx) => (
-                      <tr key={idx}>
-                        <td><code>{p.codigo}</code></td>
-                        <td>{p.descricao}</td>
-                        <td>
-                          <span className={`status-badge ${p.tipoItem === 'Peca' ? 'neutro' : 'ativo'}`}>
-                            {p.tipoItem === 'Peca' ? 'NF-e (Produto)' : 'NFS-e (Serviço)'}
-                          </span>
-                        </td>
-                        <td>{p.quantidade}</td>
-                        <td>R$ {p.valorUnitario.toFixed(2)}</td>
-                        <td><strong>R$ {(p.quantidade * p.valorUnitario).toFixed(2)}</strong></td>
+                {/* Tabela com Seleção Múltipla com Shift e Checkbox */}
+                <div className="rarus-table-container">
+                  <table className="rarus-table">
+                    <thead>
+                      <tr>
+                        <th style={{ width: 44, textAlign: 'center' }}>
+                          <input
+                            type="checkbox"
+                            checked={pecasLancadas.length > 0 && selectedPecaIndices.length === pecasLancadas.length}
+                            onChange={handleSelectAllPecas}
+                            title="Selecionar todos os itens da OS"
+                          />
+                        </th>
+                        <th style={{ width: 100 }}>Código</th>
+                        <th>Descrição do Item</th>
+                        <th style={{ width: 130 }}>Tipo Fiscal</th>
+                        <th style={{ width: 70, textAlign: 'center' }}>Qtd.</th>
+                        <th style={{ width: 110, textAlign: 'right' }}>Preço Unit.</th>
+                        <th style={{ width: 100, textAlign: 'right' }}>Desconto</th>
+                        <th style={{ width: 120, textAlign: 'right' }}>Total</th>
+                        <th style={{ width: 60, textAlign: 'center' }}>Ação</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
+                    </thead>
+                    <tbody>
+                      {pecasLancadas.length === 0 ? (
+                        <tr>
+                          <td colSpan={9} style={{ textAlign: 'center', padding: '32px', color: 'var(--color-text-muted)' }}>
+                            Nenhuma peça ou serviço lançado nesta OS. Clique no botão <strong>"+ Lançar Item / Peça"</strong> acima para adicionar.
+                          </td>
+                        </tr>
+                      ) : (
+                        pecasLancadas.map((p, idx) => {
+                          const isSelected = selectedPecaIndices.includes(idx);
+                          return (
+                            <tr
+                              key={p.pecaId || idx}
+                              className={isSelected ? 'rarus-row-selected' : ''}
+                              onClick={(e) => handlePecaClick(idx, e)}
+                              style={{ cursor: 'pointer', userSelect: 'none' }}
+                              title="Clique simples para selecionar, Shift+Clique para selecionar intervalo contíguo"
+                            >
+                              <td style={{ textAlign: 'center' }} onClick={(e) => e.stopPropagation()}>
+                                <input
+                                  type="checkbox"
+                                  checked={isSelected}
+                                  onChange={() => {
+                                    if (isSelected) {
+                                      setSelectedPecaIndices(selectedPecaIndices.filter((i) => i !== idx));
+                                    } else {
+                                      setSelectedPecaIndices([...selectedPecaIndices, idx]);
+                                      setLastSelectedPecaIndex(idx);
+                                    }
+                                  }}
+                                />
+                              </td>
+                              <td>
+                                <code>{p.codigo}</code>
+                              </td>
+                              <td>
+                                <div style={{ fontWeight: 600 }}>{p.descricao}</div>
+                                {p.seriaisOuIds && p.seriaisOuIds.length > 0 && (
+                                  <div style={{ display: 'flex', gap: 4, marginTop: 4, flexWrap: 'wrap' }}>
+                                    {p.seriaisOuIds.map((sn) => (
+                                      <span
+                                        key={sn}
+                                        style={{
+                                          fontSize: '10.5px',
+                                          backgroundColor: 'var(--color-primary-50)',
+                                          color: 'var(--color-primary-500)',
+                                          padding: '1px 6px',
+                                          borderRadius: 'var(--radius-sm)',
+                                          border: '1px solid var(--color-border-subtle)',
+                                          fontFamily: 'monospace',
+                                        }}
+                                      >
+                                        SN: {sn}
+                                      </span>
+                                    ))}
+                                  </div>
+                                )}
+                              </td>
+                              <td>
+                                <span className={`status-badge ${p.tipoItem === 'Peca' ? 'neutro' : 'ativo'}`}>
+                                  {p.tipoItem === 'Peca' ? 'NF-e (Produto)' : 'NFS-e (Serviço)'}
+                                </span>
+                              </td>
+                              <td style={{ textAlign: 'center', fontWeight: 600 }}>{p.quantidade}</td>
+                              <td style={{ textAlign: 'right' }}>R$ {p.valorUnitario.toFixed(2)}</td>
+                              <td style={{ textAlign: 'right', color: p.valorDesconto ? 'var(--status-danger-text)' : 'inherit' }}>
+                                {p.valorDesconto ? `- R$ ${p.valorDesconto.toFixed(2)}` : '-'}
+                              </td>
+                              <td style={{ textAlign: 'right', fontWeight: 700, color: 'var(--color-text-main)' }}>
+                                R$ {(p.valorTotal ?? p.quantidade * p.valorUnitario).toFixed(2)}
+                              </td>
+                              <td style={{ textAlign: 'center' }} onClick={(e) => e.stopPropagation()}>
+                                <button
+                                  type="button"
+                                  className="btn btn-secondary"
+                                  style={{ padding: '2px 6px', color: 'var(--status-danger-text)' }}
+                                  onClick={() => handleRemoverPecaIndividual(idx)}
+                                  title="Remover este item da OS"
+                                >
+                                  <Trash2 size={13} />
+                                </button>
+                              </td>
+                            </tr>
+                          );
+                        })
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Resumo Financeiro da Tabela de Peças */}
+                <div
+                  style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    marginTop: 16,
+                    padding: '14px 18px',
+                    backgroundColor: 'var(--color-bg-base)',
+                    borderRadius: 'var(--radius-md)',
+                    border: '1px solid var(--color-border-subtle)',
+                    flexWrap: 'wrap',
+                    gap: 12,
+                  }}
+                >
+                  <div style={{ display: 'flex', gap: 20, fontSize: '13px', alignItems: 'center' }}>
+                    <div>
+                      <span style={{ color: 'var(--color-text-muted)' }}>Peças (NF-e): </span>
+                      <strong>R$ {totalPecas.toFixed(2)}</strong>
+                    </div>
+                    <div>
+                      <span style={{ color: 'var(--color-text-muted)' }}>Serviços (NFS-e): </span>
+                      <strong>R$ {totalServicos.toFixed(2)}</strong>
+                    </div>
+                    {totalDescontos > 0 && (
+                      <div>
+                        <span style={{ color: 'var(--color-text-muted)' }}>Desconto Concedido: </span>
+                        <strong style={{ color: 'var(--status-danger-text)' }}>
+                          - R$ {totalDescontos.toFixed(2)}
+                        </strong>
+                      </div>
+                    )}
+                  </div>
+
+                  <div style={{ fontSize: '16px', fontWeight: 700, color: 'var(--color-primary-500)' }}>
+                    Total Geral da OS: R$ {totalGeralOS.toFixed(2)}
+                  </div>
+                </div>
               </div>
             )}
 
@@ -724,19 +1266,51 @@ export const OrdensServicoView: React.FC = () => {
             {/* Aba 6: Resumo & Faturar */}
             {abaForm === 'finalizar' && (
               <div className="form-grid">
-                <div className="col-12" style={{ backgroundColor: '#FAFAFA', padding: 20, borderRadius: 8, border: '1px solid var(--color-border-subtle)' }}>
-                  <h3 style={{ fontSize: '15px', fontWeight: 600, marginBottom: 12 }}>Resumo Financeiro da OS</h3>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', borderBottom: '1px solid var(--color-border-subtle)' }}>
-                    <span>Subtotal Serviços (NFS-e):</span>
-                    <strong>R$ {totalServicos.toFixed(2)}</strong>
+                <div className="col-12" style={{ backgroundColor: '#FAFAFA', padding: 24, borderRadius: 8, border: '1px solid var(--color-border-subtle)', display: 'flex', flexDirection: 'column', gap: 16 }}>
+                  <div>
+                    <h3 style={{ fontSize: '16px', fontWeight: 700, margin: 0, color: 'var(--color-text-main)' }}>
+                      Encerramento & Faturamento da Ordem de Serviço
+                    </h3>
+                    <p style={{ margin: '4px 0 0', fontSize: '12.5px', color: 'var(--color-text-muted)' }}>
+                      O faturamento oficializa a prestação metrológica e dispara a baixa definitiva no <strong>Estoque Fiscal</strong> (NF-e).
+                    </p>
                   </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', borderBottom: '1px solid var(--color-border-subtle)' }}>
-                    <span>Subtotal Peças Físicas (NF-e):</span>
-                    <strong>R$ {totalPecas.toFixed(2)}</strong>
+
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8, backgroundColor: '#FFFFFF', padding: 16, borderRadius: 6, border: '1px solid var(--color-border-subtle)' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', borderBottom: '1px solid var(--color-border-subtle)' }}>
+                      <span>Subtotal Serviços (NFS-e):</span>
+                      <strong>R$ {totalServicos.toFixed(2)}</strong>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', borderBottom: '1px solid var(--color-border-subtle)' }}>
+                      <span>Subtotal Peças Físicas (NF-e):</span>
+                      <strong>R$ {totalPecas.toFixed(2)}</strong>
+                    </div>
+                    {totalDescontos > 0 && (
+                      <div style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', borderBottom: '1px solid var(--color-border-subtle)', color: 'var(--status-danger-text)' }}>
+                        <span>Descontos Totais Aplicados:</span>
+                        <strong>- R$ {totalDescontos.toFixed(2)}</strong>
+                      </div>
+                    )}
+                    <div style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 0', fontSize: '18px', fontWeight: 700, color: 'var(--color-primary-500)' }}>
+                      <span>Valor Líquido Total da OS:</span>
+                      <span>R$ {totalGeralOS.toFixed(2)}</span>
+                    </div>
                   </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 0', fontSize: '18px', fontWeight: 700, color: 'var(--color-primary-500)' }}>
-                    <span>Valor Líquido Total:</span>
-                    <span>R$ {(totalServicos + totalPecas).toFixed(2)}</span>
+
+                  <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 12, alignItems: 'center' }}>
+                    <span style={{ fontSize: '12px', color: 'var(--color-text-muted)' }}>
+                      Status Atual: <strong style={{ color: formStatus === 'Faturada' ? 'var(--status-success-text)' : 'inherit' }}>{formStatus}</strong>
+                    </span>
+                    <button
+                      type="button"
+                      className="btn btn-primary"
+                      onClick={handleFaturarOS}
+                      disabled={formStatus === 'Faturada'}
+                      style={{ padding: '10px 24px', fontSize: '13.5px', fontWeight: 600 }}
+                    >
+                      <FileCheck size={16} />
+                      <span>{formStatus === 'Faturada' ? 'OS Já Faturada & Baixada' : 'Faturar OS & Baixar Estoque Fiscal'}</span>
+                    </button>
                   </div>
                 </div>
               </div>
@@ -753,6 +1327,73 @@ export const OrdensServicoView: React.FC = () => {
             </div>
           </div>
         </div>
+
+        {/* Modal de Lançamento de Peças / Serviços na OS */}
+        <ModalLancamentoPecaOS
+          aberto={modalPecaAberto}
+          onClose={() => setModalPecaAberto(false)}
+          onAdicionar={handleAdicionarPecaModal}
+          catalogoItens={itensEstoqueDisponiveis}
+          localEstoqueId={formLocalEstoque.split(' - ')[0] || 'est-central'}
+          localEstoqueNome={formLocalEstoque}
+          tecnicoNomePadrao={formTecnico}
+        />
+
+        {/* Modal de Consulta Rápida de Clientes */}
+        <ModalConsultaGenerica<Cliente>
+          aberto={modalClienteAberto}
+          titulo="Consulta de Clientes Cadastrados"
+          subtitulo="Selecione um cliente para vincular à Ordem de Serviço"
+          dados={clientesLista}
+          colunas={[
+            { chave: 'codigo', titulo: 'Código', width: 110 },
+            { chave: 'nomeFantasia', titulo: 'Nome Fantasia / Razão Social' },
+            { chave: 'cnpj', titulo: 'CNPJ', width: 160 },
+            { chave: 'cidade', titulo: 'Cidade', width: 150 },
+            { chave: 'uf', titulo: 'UF', width: 60, align: 'center' },
+          ]}
+          campoCodigo="codigo"
+          campoDescricao="nomeFantasia"
+          termoInicial={formClienteCodigo || formClienteNome}
+          onSelect={(cli) => handleSelecionarCliente(cli)}
+          onClose={() => setModalClienteAberto(false)}
+        />
+
+        {/* Modal de Consulta de Equipamentos do Parque do Cliente (Decisão 6 do Usuário) */}
+        <ModalConsultaGenerica<any>
+          aberto={modalConsultaEquipamentoAberto}
+          titulo={`Parque de Equipamentos — ${formClienteNome}`}
+          subtitulo="Busca restrita exclusivamente aos instrumentos pertencentes a este cliente"
+          dados={equipamentosDoCliente}
+          colunas={colunasConsultaEquipamento}
+          campoCodigo="numeroSerie"
+          campoDescricao="modelo"
+          extraAction={{
+            label: '+ Cadastrar Novo Equipamento',
+            onClick: () => {
+              setModalConsultaEquipamentoAberto(false);
+              setModalCadastrarEquipamentoAberto(true);
+            },
+            icon: <Plus size={14} />,
+          }}
+          onSelect={(eq) => {
+            handleAddEquipamento(eq.id);
+            setModalConsultaEquipamentoAberto(false);
+          }}
+          onClose={() => setModalConsultaEquipamentoAberto(false)}
+        />
+
+        {/* Modal de Cadastro Rápido de Equipamento com Cliente Travado (Decisão 6 do Usuário) */}
+        <ModalCadastroEquipamentoRapido
+          aberto={modalCadastrarEquipamentoAberto}
+          clienteId={formClienteId}
+          clienteNome={formClienteNome}
+          onClose={() => setModalCadastrarEquipamentoAberto(false)}
+          onEquipamentoSalvo={(novoEq) => {
+            setEquipamentosDisponiveis((prev) => [novoEq, ...prev]);
+            handleAddEquipamento(novoEq.id);
+          }}
+        />
       </div>
     );
   }
@@ -768,7 +1409,7 @@ export const OrdensServicoView: React.FC = () => {
             Controle de chamados em 14 etapas, múltiplos equipamentos vinculados e rastreabilidade metrológica
           </p>
         </div>
-        <button className="btn btn-primary" onClick={handleAbrirNovaOS} type="button">
+        <button className="btn btn-primary" onClick={() => handleAbrirNovaOS()} type="button">
           <Plus size={15} />
           <span>Abrir Nova OS</span>
         </button>
@@ -830,28 +1471,40 @@ export const OrdensServicoView: React.FC = () => {
         <div className="rarus-grid-header-tabs">
           <button
             className={`rarus-filter-tab-pill ${statusFiltro === 'Todos' ? 'active' : ''}`}
-            onClick={() => setStatusFiltro('Todos')}
+            onClick={() => {
+              setStatusFiltro('Todos');
+              updateUrlParams({ status: null });
+            }}
           >
             <span>Todas as OS</span>
             <span className="count">{ordens.length}</span>
           </button>
           <button
             className={`rarus-filter-tab-pill ${statusFiltro === 'Em Serviço' ? 'active' : ''}`}
-            onClick={() => setStatusFiltro('Em Serviço')}
+            onClick={() => {
+              setStatusFiltro('Em Serviço');
+              updateUrlParams({ status: 'Em Serviço' });
+            }}
           >
             <span>Em Serviço</span>
             <span className="count">1</span>
           </button>
           <button
             className={`rarus-filter-tab-pill ${statusFiltro === 'Aguardando Peças' ? 'active' : ''}`}
-            onClick={() => setStatusFiltro('Aguardando Peças')}
+            onClick={() => {
+              setStatusFiltro('Aguardando Peças');
+              updateUrlParams({ status: 'Aguardando Peças' });
+            }}
           >
             <span>Aguardando Peças</span>
             <span className="count">1</span>
           </button>
           <button
             className={`rarus-filter-tab-pill ${statusFiltro === 'Equipamento Pronto' ? 'active' : ''}`}
-            onClick={() => setStatusFiltro('Equipamento Pronto')}
+            onClick={() => {
+              setStatusFiltro('Equipamento Pronto');
+              updateUrlParams({ status: 'Equipamento Pronto' });
+            }}
           >
             <span>Equipamento Pronto</span>
             <span className="count">1</span>
@@ -864,7 +1517,11 @@ export const OrdensServicoView: React.FC = () => {
             <input
               placeholder="Buscar por Nº da OS, Cliente, Série, Técnico..."
               value={busca}
-              onChange={(e) => setBusca(e.target.value)}
+              onChange={(e) => {
+                const val = e.target.value;
+                setBusca(val);
+                updateUrlParams({ busca: val || null });
+              }}
             />
           </div>
 
@@ -874,7 +1531,11 @@ export const OrdensServicoView: React.FC = () => {
               className="form-select"
               style={{ width: 'auto', padding: '5px 10px' }}
               value={statusFiltro}
-              onChange={(e) => setStatusFiltro(e.target.value)}
+              onChange={(e) => {
+                const val = e.target.value;
+                setStatusFiltro(val);
+                updateUrlParams({ status: val !== 'Todos' ? val : null });
+              }}
             >
               <option value="Todos">Todos os 14 Status</option>
               {STATUS_OS_LISTA.map((st) => (
@@ -887,82 +1548,111 @@ export const OrdensServicoView: React.FC = () => {
         </div>
 
         {/* Grade de Movimentos (Colunas Reais de 'tabela de os.jpeg') */}
-        <table className="rarus-table">
-          <thead>
-            <tr>
-              <th>Número</th>
-              <th>Status OS</th>
-              <th>Série</th>
-              <th>Data Emissão</th>
-              <th>Cód. Cli/For</th>
-              <th>Nome Cliente / Fornec</th>
-              <th>Valor Líquido</th>
-              <th>Status Financeiro</th>
-              <th>Ações</th>
-            </tr>
-          </thead>
-          <tbody>
-            {ordens.map((os) => (
-              <tr
-                key={os.id}
-                style={{ cursor: 'pointer' }}
-                onClick={() => setOsSelecionada(os)}
-              >
-                <td>
-                  <span style={{ fontFamily: 'monospace', fontWeight: 700, color: 'var(--color-primary-500)' }}>
-                    {os.numero.padStart(7, '0')}
-                  </span>
-                </td>
-                <td>
-                  <span
-                    className={`status-badge ${
-                      os.status === 'Equipamento Pronto' || os.status === 'Faturada' || os.status === 'Encerrada'
-                        ? 'ativo'
-                        : os.status === 'Aguardando Peças' || os.status === 'Sem Conserto'
-                        ? 'inativo'
-                        : 'pendente'
-                    }`}
-                  >
-                    <span className="rarus-status-dot" />
-                    {os.status}
-                  </span>
-                </td>
-                <td><span style={{ fontFamily: 'monospace' }}>OS</span></td>
-                <td>{os.dataAbertura}</td>
-                <td><code>C01800</code></td>
-                <td>
-                  <div style={{ fontWeight: 600 }}>{os.clienteNome}</div>
-                  <div style={{ fontSize: '11px', color: 'var(--color-text-muted)' }}>
-                    {os.equipamentos.length} equipamento(s) • Téc: {os.tecnicoNome}
-                  </div>
-                </td>
-                <td>
-                  <strong style={{ color: 'var(--color-text-main)' }}>
-                    R$ {os.valorTotalGeral.toFixed(2)}
-                  </strong>
-                </td>
-                <td>
-                  <span style={{ fontSize: '11.5px', color: 'var(--color-text-muted)' }}>
-                    {os.faturada ? 'Faturado-Atend.' : 'Normal-Pend.'}
-                  </span>
-                </td>
-                <td>
-                  <button
-                    className="btn btn-secondary"
-                    style={{ padding: '4px 10px', fontSize: '12px' }}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setOsSelecionada(os);
-                    }}
-                  >
-                    Abrir OS
-                  </button>
-                </td>
+        <div className="rarus-table-container">
+          <table className="rarus-table">
+            <thead>
+              <tr>
+                <th style={{ width: 110 }}>Nº OS</th>
+                <th style={{ width: 130 }}>Status</th>
+                <th style={{ width: 60 }}>Tipo</th>
+                <th style={{ width: 100 }}>Abertura</th>
+                <th style={{ width: 90 }}>Cliente</th>
+                <th>Razão Social / Dados da OS</th>
+                <th style={{ width: 120 }}>Total Geral</th>
+                <th style={{ width: 100 }}>Faturamento</th>
+                <th style={{ width: 80, textAlign: 'center' }}>Ações</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {ordens.map((os) => {
+                const isSelected = selectedRowId === os.id;
+                return (
+                  <tr
+                    key={os.id}
+                    className={isSelected ? 'rarus-row-selected' : ''}
+                    onClick={() => handleRowClick(os)}
+                  >
+                    <td>
+                      <span className="os-number-badge">
+                        <ClipboardList size={13} style={{ marginRight: 4 }} />
+                        {os.numero}
+                      </span>
+                    </td>
+                    <td>
+                      <span
+                        className={`status-badge ${
+                          os.status === 'Em Serviço' || os.status === 'Equipamento Pronto'
+                            ? 'ativo'
+                            : os.status === 'Aguardando Peças' || os.status === 'Sem Conserto'
+                            ? 'inativo'
+                            : 'pendente'
+                        }`}
+                      >
+                        <span className="rarus-status-dot" />
+                        {os.status}
+                      </span>
+                    </td>
+                    <td><span style={{ fontFamily: 'monospace' }}>OS</span></td>
+                    <td>{os.dataAbertura}</td>
+                    <td><code>C01800</code></td>
+                    <td>
+                      <div style={{ fontWeight: 600 }}>{os.clienteNome}</div>
+                      <div style={{ fontSize: '11px', color: 'var(--color-text-muted)' }}>
+                        {os.equipamentos.length} equipamento(s) • Téc: {os.tecnicoNome}
+                      </div>
+                    </td>
+                    <td>
+                      <strong style={{ color: 'var(--color-text-main)' }}>
+                        R$ {os.valorTotalGeral.toFixed(2)}
+                      </strong>
+                    </td>
+                    <td>
+                      <span style={{ fontSize: '11.5px', color: 'var(--color-text-muted)' }}>
+                        {os.faturada ? 'Faturado-Atend.' : 'Normal-Pend.'}
+                      </span>
+                    </td>
+                    <td>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <button
+                          className="btn btn-secondary"
+                          style={{ padding: '4px 10px', fontSize: '12px' }}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            abrirOS(os);
+                          }}
+                          type="button"
+                        >
+                          Abrir OS
+                        </button>
+                        <button
+                          className="btn btn-secondary"
+                          style={{ padding: '4px 8px', fontSize: '12px' }}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleAbrirModalImpressao(os);
+                          }}
+                          title="Imprimir OS / Etiqueta Lab / Certificado"
+                          type="button"
+                        >
+                          <Printer size={13} />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
       </div>
+
+      {/* MODAL DE IMPRESSÃO DA OS (DOCUMENTOS, ETIQUETA COM QR CODE & CERTIFICADOS) */}
+      <ModalImpressaoOS
+        aberto={modalImpressaoAberto}
+        onFechar={() => setModalImpressaoAberto(false)}
+        os={osParaImprimir}
+      />
     </div>
   );
 };
+

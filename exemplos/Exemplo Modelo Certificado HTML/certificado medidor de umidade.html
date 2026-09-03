@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Certificado de Calibração</title>
+    <style>
+        /* --- CONFIGURAÇÕES DE IMPRESSÃO E PÁGINA A4 --- */
+        @page {
+            size: A4;
+            margin: 0;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: #f0f0f0;
+            font-family: Arial, Helvetica, sans-serif;
+            font-size: 8.5pt;
+            color: #000;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+        }
+
+        /* Estilo da folha A4 na tela */
+        .folha-a4 {
+            width: 210mm;
+            height: 297mm;
+            padding: 8mm 12.7mm;
+            background-color: white;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.15);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            overflow: hidden;
+        }
+
+        @media print {
+            html, body {
+                height: 297mm;
+                overflow: hidden;
+            }
+
+            body {
+                background-color: transparent;
+            }
+
+            .folha-a4 {
+                box-shadow: none;
+                width: 100%;
+                height: 297mm;
+                padding: 8mm 12.7mm;
+            }
+        }
+
+        /* --- CABEÇALHO --- */
+        .cabecalho {
+            display: grid;
+            grid-template-columns: 85px 1fr 85px;
+            align-items: center;
+            padding-bottom: 4px;
+            border-bottom: 3px double #000;
+        }
+
+        .logo-container {
+            width: 85px;
+        }
+
+        .logo {
+            max-width: 100%;
+            height: auto;
+            display: block;
+        }
+
+        .titulo-container {
+            text-align: center;
+            grid-column: 2;
+        }
+
+        .titulo-principal {
+            font-size: 11pt;
+            font-weight: bold;
+            color: #000;
+            margin: 0;
+            text-transform: uppercase;
+        }
+
+        .subtitulo {
+            font-size: 10pt;
+            font-weight: bold;
+            color: #000;
+            margin: 2px 0 0 0;
+        }
+
+        /* --- SEÇÕES E TABELAS --- */
+        p {
+            margin: 1px 0;
+            line-height: 1.25;
+            font-size: 8pt;
+        }
+
+        .secao-titulo-principal {
+            font-size: 9pt;
+            font-weight: bold;
+            color: #000;
+            margin: 4px 0 2px 0;
+        }
+
+        .secao-container {
+            border-top: 3px double #000;
+            margin-top: 4px;
+            padding-top: 2px;
+        }
+
+        .secao-titulo {
+            font-weight: bold;
+            font-size: 9pt;
+            margin-bottom: 3px;
+        }
+
+        .tabela-dados {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 2px;
+        }
+
+        .tabela-dados td {
+            padding: 1px 3px;
+            vertical-align: top;
+            white-space: nowrap;
+            font-size: 8pt;
+        }
+
+        .rotulo {
+            font-weight: bold;
+            width: 1%;
+            padding-right: 5px !important;
+        }
+
+        /* --- ESTILOS DA SEÇÃO 5 --- */
+        .tabela-relatorio {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 2px 0 6px 0;
+        }
+
+        .tabela-relatorio td, .tabela-relatorio th {
+            padding: 2px 4px;
+            font-size: 8pt;
+            vertical-align: bottom;
+            white-space: nowrap;
+        }
+
+        .tabela-relatorio th {
+            font-weight: bold;
+            color: #000;
+        }
+
+        /* --- TABELA DE RESULTADOS COM BORDAS COM QUADRO COMPLETO (SEÇÃO 6) --- */
+        .tabela-bordada {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 3px 0 8px 0;
+        }
+
+        .tabela-bordada th, 
+        .tabela-bordada td {
+            border: 1px solid #000;
+            padding: 3px 4px;
+            font-size: 8pt;
+            vertical-align: middle;
+            white-space: nowrap;
+            text-align: center;
+        }
+
+        .tabela-bordada th {
+            font-weight: bold;
+            background-color: #ffffff;
+        }
+
+        /* Classes auxiliares */
+        .txt-centro {
+            text-align: center;
+        }
+
+        .subtitulo-tabela {
+            font-weight: bold;
+            font-size: 8.5pt;
+            margin: 6px 0 2px 0;
+        }
+
+        /* --- BLOCO DE ASSINATURA E QR CODE COMPATIBILIZADO --- */
+        .bloco-final-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            margin-top: 10px;
+            position: relative;
+        }
+
+        .assinatura-box {
+            width: 260px;
+            margin: 0 auto;
+            text-align: center;
+            margin-bottom: 15px;
+        }
+
+        .assinatura-imagem {
+            height: 40px;
+            display: flex;
+            align-items: flex-end;
+            justify-content: center;
+        }
+
+        .img-assinatura {
+            max-height: 100%;
+            width: auto;
+        }
+
+        .linha-assinatura {
+            border-top: 1px solid #000;
+            margin: 2px 0 3px 0;
+            width: 100%;
+        }
+
+        .assinatura-nome {
+            font-weight: bold;
+            font-size: 8.5pt;
+        }
+
+        .assinatura-cargo {
+            font-weight: bold;
+            font-size: 8pt;
+        }
+
+        .qrcode-box {
+            position: absolute;
+            right: 0;
+            bottom: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .img-qrcode {
+            width: 55px;
+            height: 55px;
+        }
+
+        .qrcode-texto {
+            font-size: 7.5pt;
+            margin-top: 2px;
+        }
+
+        /* --- RODAPÉ --- */
+        .rodape-container {
+            margin-top: 8px;
+            font-family: Arial, Helvetica, sans-serif;
+            color: #000;
+        }
+
+        .rodape-empresa {
+            text-align: center;
+            font-size: 7.5pt;
+            line-height: 1.25;
+            margin-top: 2px;
+        }
+
+        .link-site {
+            color: #000;
+            text-decoration: underline;
+        }
+
+        .rodape-meta {
+            text-align: right;
+            font-size: 7pt;
+            margin-top: 2px;
+            line-height: 1.2;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="folha-a4">
+        <!-- CONTEÚDO PRINCIPAL -->
+        <div class="conteudo-principal">
+            <!-- CABEÇALHO COM LOGO AUMENTADA -->
+            <header class="cabecalho">
+                <div class="logo-container">
+                    <img src="https://www.rarustecnologia.com.br/wp-content/uploads/2025/03/LOGO-RARUS-1536x1536.png"
+                        alt="Logo Rarus" class="logo">
+                </div>
+
+                <div class="titulo-container">
+                    <h1 class="titulo-principal">LABORATÓRIO DE CALIBRAÇÃO RARUS TECNOLOGIA</h1>
+                    <h2 class="subtitulo">Certificado de Calibração nº 4313/25</h2>
+                </div>
+
+                <div></div>
+            </header>
+
+            <!-- SEÇÃO 1: DADOS DO CLIENTE -->
+            <div class="secao-titulo-principal">1. Dados</div>
+            <table class="tabela-dados">
+                <tr>
+                    <td class="rotulo">Cliente:</td>
+                    <td>{{cliente}}</td>
+                    <td class="rotulo">Município:</td>
+                    <td>{{cidade}}</td>
+                </tr>
+                <tr>
+                    <td class="rotulo">Endereço:</td>
+                    <td>{{endereco}}</td>
+                    <td class="rotulo">Estado:</td>
+                    <td>{{uf}}</td>
+                </tr>
+                <tr>
+                    <td class="rotulo">Solicitante:</td>
+                    <td colspan="3">O mesmo</td>
+                </tr>
+            </table>
+
+            <!-- SEÇÃO 2: DESCRIÇÃO DO ITEM CALIBRADO -->
+            <div class="secao-container">
+                <div class="secao-titulo">2 -Descrição do item calibrado</div>
+                <table class="tabela-dados">
+                    <tr>
+                        <td class="rotulo">Equipamento:</td>
+                        <td>Medidor de umidade</td>
+                        <td class="rotulo">Marca:</td>
+                        <td>Gehaka</td>
+                        <td class="rotulo">Modelo:</td>
+                        <td>G610I</td>
+                    </tr>
+                    <tr>
+                        <td class="rotulo">Número série:</td>
+                        <td>{{ns}}</td>
+                        <td class="rotulo">Pat:</td>
+                        <td>{{patrimonio}}</td>
+                        <td class="rotulo">Divisão:</td>
+                        <td>{{divisao}}</td>
+                    </tr>
+                </table>
+            </div>
+
+            <!-- SEÇÃO 3: INFORMAÇÃO DA CALIBRAÇÃO -->
+            <div class="secao-container">
+                <div class="secao-titulo">3 - Informação da Calibração</div>
+                <table class="tabela-dados">
+                    <tr>
+                        <td class="rotulo">Temperatura:</td>
+                        <td>{{temp}}</td>
+                        <td class="rotulo">Umidade:</td>
+                        <td colspan="3">34,0 %</td>
+                    </tr>
+                    <tr>
+                        <td class="rotulo">Data da calibração:</td>
+                        <td>17/11/2025</td>
+                        <td class="rotulo">Data emissão:</td>
+                        <td>17/11/2025</td>
+                        <td class="rotulo">Local da calibração:</td>
+                        <td>Laboratório</td>
+                    </tr>
+                </table>
+            </div>
+
+            <!-- SEÇÃO 4: METODOLOGIA -->
+            <div class="secao-container">
+                <div class="secao-titulo">4 - Metodologia</div>
+                <p>A calibração consiste em comparação com um equipamento padrão de referência, este por sua vez sera
+                    comparado ao equipamento em calibração citado neste documento. O resultado é estimado com base em uma
+                    média de 3 (três) leituras.</p>
+            </div>
+
+            <!-- SEÇÃO 5: PADRÕES -->
+            <div class="secao-container">
+                <div class="secao-titulo">5 - Rastreabilidade dos padrões</div>
+                <table class="tabela-relatorio">
+                    <thead>
+                        <tr>
+                            <th class="txt-centro" style="width: 20%;">Identificação</th>
+                            <th class="txt-centro" style="width: 30%;">Padrão</th>
+                            <th class="txt-centro" style="width: 25%;">Certificado</th>
+                            <th class="txt-centro" style="width: 25%;">Validade dos padrões</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td class="txt-centro">JP1</td>
+                            <td class="txt-centro">Jogo de pesos-padrão</td>
+                            <td class="txt-centro">WL502/2024</td>
+                            <td class="txt-centro">20/03/2026</td>
+                        </tr>
+                        <tr>
+                            <td class="txt-centro">TH-01</td>
+                            <td class="txt-centro">Termohigrômetro</td>
+                            <td class="txt-centro">LT-457 607</td>
+                            <td class="txt-centro">30/08/2026</td>
+                        </tr>
+                        <tr>
+                            <td class="txt-centro">G2000</td>
+                            <td class="txt-centro">Medidor de umidade</td>
+                            <td class="txt-centro">113416</td>
+                            <td class="txt-centro">30/01/2026</td>
+                        </tr>
+                        <tr>
+                            <td class="txt-centro">-</td>
+                            <td class="txt-centro">-</td>
+                            <td class="txt-centro">-</td>
+                            <td class="txt-centro">-</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- SEÇÃO 6: RESULTADOS -->
+            <div class="secao-container">
+                <div class="secao-titulo">6 - Resultados</div>
+                
+                <div class="subtitulo-tabela">Leituras do Medidor de Umidade Padrão</div>
+                <table class="tabela-bordada">
+                    <thead>
+                        <tr>
+                            <th style="width: 15%;">Amostra</th>
+                            <th style="width: 20%;">Umidade (%)</th>
+                            <th style="width: 20%;">Desvio Padrão</th>
+                            <th style="width: 25%;">Temperatura da Amostra (°C)</th>
+                            <th style="width: 20%;">Incerteza Padrão Combinada</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>SOJA</td>
+                            <td>15,66</td>
+                            <td>0,01</td>
+                            <td>26,3</td>
+                            <td>0,006</td>
+                        </tr>
+                        <tr>
+                            <td>MILHO</td>
+                            <td>14,37</td>
+                            <td>0,01</td>
+                            <td>26,4</td>
+                            <td>0,006</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <div class="subtitulo-tabela">Leituras do Medidor de Umidade Calibrado</div>
+                <table class="tabela-bordada">
+                    <thead>
+                        <tr>
+                            <th style="width: 15%;">Amostra</th>
+                            <th style="width: 20%;">Umidade (%)</th>
+                            <th style="width: 15%;">Erro (%)</th>
+                            <th style="width: 20%;">Desvio Padrão</th>
+                            <th style="width: 20%;">Temperatura da Amostra (°C)</th>
+                            <th style="width: 20%;">Incerteza Expandida</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>SOJA</td>
+                            <td>15,74</td>
+                            <td>0,08</td>
+                            <td>0,026</td>
+                            <td>26,8</td>
+                            <td>0,074</td>
+                        </tr>
+                        <tr>
+                            <td>MILHO</td>
+                            <td>14,44</td>
+                            <td>0,07</td>
+                            <td>0,015</td>
+                            <td>26,5</td>
+                            <td>0,031</td>
+                        </tr>
+                        
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- SEÇÃO 7: OBSERVAÇÕES -->
+            <div class="secao-container">
+                <div class="secao-titulo">7 - Informações</div>
+                <p>- Esta calibração não isenta o instrumento do controle metrológico estabelecido na regulamentação metrológica.</p>
+                <p>- Este Certificado de calibração atende aos requisitos de rastreabilidade metrológica.</p>
+                <p>- A incerteza expandida de medição relatada é declarada como a incerteza padrão de medição multiplicada pelo fator de abrangência k = (x,xx), corresponde a uma probabilidade de abrangência de aproximadamente 95%. A incerteza padrão da medição foi determinada de acordo com a publicação EA-4/02.</p>
+                <p>- Este certificado se restringe apenas ao objeto calibrado, não sendo extensivo a quaisquer lotes, mesmo similares.</p>
+                <p>- Não é permitida a reprodução deste documento sem autorização da Rarus Tecnologia.</p>
+                <p>- Erro: é a diferença entre o valor médio da medição e o valor verdadeiro do padrão.</p>
+                <p>- Os valores acima informados estão arredondados para o numero de casas decimais referente a resolução do equipamento.</p>
+            </div>
+
+            
+        </div>
+
+        <!-- RODAPÉ DO DOCUMENTO -->
+        <footer class="rodape-container">
+            <!-- ASSINATURA CENTRALIZADA E QR CODE À DIREITA -->
+            <div class="bloco-final-container">
+                <div class="assinatura-box">
+                    <div class="assinatura-imagem">
+                        <img src="./ass_caio.png" alt="Assinatura" class="img-assinatura">
+                    </div>
+                    <div class="linha-assinatura"></div>
+                    <div class="assinatura-nome">Caio Detz</div>
+                    <div class="assinatura-cargo">Técnico executante</div>
+                </div>
+
+                <div class="qrcode-box">
+                    <a href="https://www.rarustecnologia.com.br">
+                        <img src="https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=https://www.rarustecnologia.com.br"
+                        alt="QR Code" class="img-qrcode">
+                    </a>
+                    <span class="qrcode-texto">Fale com a gente!</span>
+                </div>
+            </div>
+            <!-- Linha Central: Dados da Empresa -->
+            <div class="rodape-empresa">
+                <strong>Rarus Tecnologia e Serviços Ltda</strong><br>
+                Av. Novo Horizonte, 1056 - Rota do Sol - Sorriso/MT - CEP:78895-124 - Tel: (65) 99281-5160<br>
+                <a href="https://www.rarustecnologia.com.br" target="_blank"
+                    class="link-site">www.rarustecnologia.com.br</a>
+            </div>
+
+            <!-- Linha Inferior: Numeração e Revisão -->
+            <div class="rodape-meta">
+                Página: 1/1<br>
+                Rev 01 23/05/2023
+            </div>
+        </footer>
+    </div>
+</body>
+
+</html>

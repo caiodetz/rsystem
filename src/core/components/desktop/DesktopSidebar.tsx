@@ -47,17 +47,16 @@ export function DesktopSidebar({
       items: [
         { id: 'clientes', label: 'Clientes', icon: Users, badge: '3' },
         { id: 'ordens-servico', label: 'Ordens de Serviço', icon: ClipboardList, badge: '1045' },
-        { id: 'equipamentos', label: 'Equipamentos (GEHAKA)', icon: Wrench, badge: '5' },
+        { id: 'equipamentos', label: 'Equipamentos', icon: Wrench, badge: '5' },
         { id: 'calibracoes', label: 'Calibrações & Relatos', icon: Award },
-        { id: 'padroes', label: 'Padrões Basais (RBC)', icon: ShieldCheck, badge: 'Atenção' },
+        { id: 'padroes', label: 'Padrões Basais', icon: ShieldCheck, badge: 'Atenção' },
       ],
     },
     {
       group: 'ESTOQUE & SUPRIMENTOS',
       items: [
         { id: 'estoque', label: 'Estoque Multi-Local', icon: Boxes },
-        { id: 'pecas-servicos', label: 'Peças & Serviços', icon: Layers },
-        { id: 'transferencias', label: 'Transferências / Req.', icon: ArrowLeftRight, badge: '1 pend.' },
+        { id: 'transferencias', label: 'Transferências', icon: ArrowLeftRight, badge: '1' },
       ],
     },
     {

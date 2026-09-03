@@ -12,6 +12,9 @@ import {
   Layers,
   ChevronRight,
   Code,
+  RotateCcw,
+  Printer,
+  Copy,
 } from 'lucide-react';
 
 export function TemplatesRelatoView() {
@@ -52,6 +55,21 @@ export function TemplatesRelatoView() {
     await RelatosService.salvarRelato(atualizado);
     setMensagemSalvo(true);
     setTimeout(() => setMensagemSalvo(false), 2500);
+  };
+
+  const handleRestaurarPadrao = () => {
+    if (!relatoAtivo) return;
+    if (confirm('Deseja restaurar o código HTML padrão deste modelo de certificado?')) {
+      const templateOriginal = RelatosService.obterTemplateOriginal(relatoAtivo.id);
+      if (templateOriginal) {
+        setCodigoHtml(templateOriginal);
+      }
+    }
+  };
+
+  const handleCopiarHtml = () => {
+    navigator.clipboard.writeText(codigoHtml);
+    alert('Código HTML copiado para a área de transferência!');
   };
 
   // Variáveis simuladas para a prévia em tempo real
@@ -120,66 +138,73 @@ export function TemplatesRelatoView() {
         </div>
         <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
           {mensagemSalvo && (
-            <span style={{ color: 'var(--rarus-success)', fontSize: '13px', fontWeight: 600 }}>
-              ✓ Template salvo com sucesso!
+            <span style={{ color: 'var(--status-success-text)', fontSize: '13px', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 6 }}>
+              <CheckCircle2 size={16} />
+              Template salvo com sucesso!
             </span>
           )}
-          <button className="btn-primary-rarus" onClick={handleSalvar} type="button">
-            <Save size={15} />
+          <button className="btn btn-secondary" onClick={handleRestaurarPadrao} type="button">
+            <RotateCcw size={14} />
+            <span>Restaurar Padrão</span>
+          </button>
+          <button className="btn btn-primary" onClick={handleSalvar} type="button">
+            <Save size={14} />
             <span>Salvar Template</span>
           </button>
         </div>
       </div>
 
       {/* Seletor de Modelo de Relato */}
-      <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-        {relatos.map((r) => (
-          <button
-            key={r.id}
-            onClick={() => handleSelecionarRelato(r)}
-            className={`btn-secondary-rarus ${relatoAtivo?.id === r.id ? 'active' : ''}`}
-            style={{
-              borderColor: relatoAtivo?.id === r.id ? 'var(--rarus-cyan)' : undefined,
-              backgroundColor: relatoAtivo?.id === r.id ? 'var(--rarus-cyan-light)' : undefined,
-              color: relatoAtivo?.id === r.id ? 'var(--rarus-navy)' : undefined,
-              fontWeight: relatoAtivo?.id === r.id ? 700 : 500,
-            }}
-          >
-            <Layers size={14} />
-            <span>
-              {r.tipoEquipamento} • ({r.tipoCalibracaoNome})
-            </span>
-          </button>
-        ))}
+      <div className="rarus-datagrid-container" style={{ flexShrink: 0 }}>
+        <div className="rarus-grid-header-tabs" style={{ borderBottom: 'none' }}>
+          {relatos.map((r) => {
+            const isAtivo = relatoAtivo?.id === r.id;
+            return (
+              <button
+                key={r.id}
+                type="button"
+                onClick={() => handleSelecionarRelato(r)}
+                className={`rarus-filter-tab-pill ${isAtivo ? 'active' : ''}`}
+              >
+                <Layers size={14} />
+                <span>
+                  {r.tipoEquipamento} • ({r.tipoCalibracaoNome})
+                </span>
+              </button>
+            );
+          })}
+        </div>
       </div>
 
       {/* Barra de Variáveis Rápidas (Clique para Inserir) */}
       <div
+        className="rarus-datagrid-container"
         style={{
-          background: 'var(--bg-card)',
-          border: '1px solid var(--border-subtle)',
-          borderRadius: 'var(--radius-md)',
-          padding: '12px 16px',
+          padding: '14px 18px',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '8px',
         }}
       >
-        <div style={{ fontSize: '11.5px', fontWeight: 700, color: 'var(--text-muted)', marginBottom: 8 }}>
-          CLIQUE PARA INSERIR VARIÁVEIS NO HTML:
+        <div style={{ fontSize: '11.5px', fontWeight: 700, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+          Clique para inserir variáveis dinâmicas no código HTML:
         </div>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
           {listaVariaveis.map((v) => (
             <button
               key={v.valor}
+              type="button"
               onClick={() => handleInserirVariavel(v.valor)}
+              className="btn btn-secondary"
               style={{
-                background: 'var(--bg-app)',
-                border: '1px solid var(--border-subtle)',
-                borderRadius: 4,
                 padding: '3px 8px',
-                fontSize: '11.5px',
-                cursor: 'pointer',
-                color: 'var(--rarus-cyan)',
+                fontSize: '11px',
                 fontFamily: 'monospace',
                 fontWeight: 600,
+                color: 'var(--color-primary-500)',
+                backgroundColor: 'var(--color-primary-50)',
+                borderColor: 'rgba(37, 99, 235, 0.2)',
+                height: '26px',
               }}
               title={`Insere {{${v.valor}}}`}
             >
@@ -189,56 +214,71 @@ export function TemplatesRelatoView() {
         </div>
       </div>
 
-      {/* Editor em Split-View */}
+      {/* Editor em Split-View Responsivo com Editor Ampliado */}
       <div className="rarus-split-editor">
-        {/* Painel Esquerdo: Código HTML */}
+        {/* Painel Esquerdo: Código HTML com Altura Confortável */}
         <div className="rarus-code-pane">
           <div
             style={{
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between',
-              marginBottom: 6,
-              fontSize: '12px',
+              fontSize: '12.5px',
               fontWeight: 600,
-              color: 'var(--text-muted)',
+              color: 'var(--color-text-main)',
             }}
           >
             <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-              <Code size={14} /> Código HTML do Modelo
+              <Code size={15} color="var(--color-primary-500)" />
+              Código HTML do Modelo ({relatoAtivo?.tipoEquipamento || 'G650i'})
             </span>
-            <span style={{ fontSize: '11px' }}>Suporta CSS inline</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <button
+                type="button"
+                className="btn btn-secondary"
+                style={{ padding: '2px 8px', fontSize: '11px', height: '24px' }}
+                onClick={handleCopiarHtml}
+                title="Copiar código HTML"
+              >
+                <Copy size={12} />
+                <span>Copiar</span>
+              </button>
+              <span style={{ fontSize: '11px', color: 'var(--color-text-muted)' }}>
+                Suporta CSS inline & Flex/Grid
+              </span>
+            </div>
           </div>
           <textarea
+            className="rarus-code-textarea"
             value={codigoHtml}
             onChange={(e) => setCodigoHtml(e.target.value)}
             placeholder="Insira o código HTML do certificado com variáveis {{variavel}}..."
+            spellCheck={false}
           />
         </div>
 
         {/* Painel Direito: Prévia em Tempo Real */}
-        <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
           <div
             style={{
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between',
-              marginBottom: 6,
-              fontSize: '12px',
+              fontSize: '12.5px',
               fontWeight: 600,
-              color: 'var(--text-muted)',
+              color: 'var(--color-text-main)',
             }}
           >
             <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-              <Eye size={14} /> Prévia em Tempo Real (Dados Simulados)
+              <Eye size={15} color="var(--color-primary-500)" />
+              Prévia do Certificado em Tempo Real
             </span>
-            <span style={{ fontSize: '11px', color: 'var(--rarus-cyan)', fontWeight: 600 }}>
-              Atualização Automática
+            <span style={{ fontSize: '11px', color: 'var(--color-primary-500)', fontWeight: 600 }}>
+              ● Atualização Instantânea
             </span>
           </div>
           <div
             className="rarus-preview-pane"
-            style={{ flex: 1 }}
             dangerouslySetInnerHTML={{ __html: htmlPrevia }}
           />
         </div>

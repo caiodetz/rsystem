@@ -15,7 +15,11 @@ const SwaggerUI = dynamic(() => import('swagger-ui-react'), {
   ),
 });
 
-export default function SwaggerDocs() {
+interface SwaggerDocsProps {
+  showHeader?: boolean;
+}
+
+export default function SwaggerDocs({ showHeader = true }: SwaggerDocsProps) {
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -27,31 +31,33 @@ export default function SwaggerDocs() {
   }
 
   return (
-    <div className="swagger-container" style={{ background: '#ffffff', borderRadius: '8px', padding: '16px', minHeight: '80vh' }}>
-      <div style={{ marginBottom: '16px', padding: '12px 16px', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '6px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <div>
-          <strong style={{ color: '#0f172a' }}>RSYSTEM OpenAPI 3.0 Live Documentation</strong>
-          <p style={{ margin: 0, fontSize: '0.85rem', color: '#64748b' }}>
-            Endpoints RESTful modulares para metrologia e manutenção industrial.
-          </p>
+    <div className="swagger-container" style={{ background: '#ffffff', borderRadius: '8px', minHeight: '80vh' }}>
+      {showHeader && (
+        <div style={{ marginBottom: '16px', padding: '12px 16px', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '6px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div>
+            <strong style={{ color: '#0f172a' }}>RSYSTEM OpenAPI 3.0 Live Documentation</strong>
+            <p style={{ margin: 0, fontSize: '0.85rem', color: '#64748b' }}>
+              Endpoints RESTful modulares para metrologia e manutenção industrial.
+            </p>
+          </div>
+          <a
+            href="/api/v1/openapi"
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{
+              padding: '6px 12px',
+              fontSize: '0.8rem',
+              background: '#0284c7',
+              color: '#fff',
+              borderRadius: '4px',
+              textDecoration: 'none',
+              fontWeight: 500,
+            }}
+          >
+            JSON Schema Raw ↗
+          </a>
         </div>
-        <a
-          href="/api/v1/openapi"
-          target="_blank"
-          rel="noopener noreferrer"
-          style={{
-            padding: '6px 12px',
-            fontSize: '0.8rem',
-            background: '#0284c7',
-            color: '#fff',
-            borderRadius: '4px',
-            textDecoration: 'none',
-            fontWeight: 500,
-          }}
-        >
-          JSON Schema Raw ↗
-        </a>
-      </div>
+      )}
       <SwaggerUI spec={openapiSpec} />
     </div>
   );

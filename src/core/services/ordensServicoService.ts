@@ -48,7 +48,19 @@ export const OrdensServicoService = {
   },
 
   async obterPorNumeroOuId(termo: string): Promise<OrdemServico | null> {
-    const os = ordens.find((o) => o.id === termo || o.numero === termo);
+    const limpo = termo.trim();
+    const semZeros = limpo.replace(/^0+/, '');
+    const comZeros = limpo.padStart(7, '0');
+
+    const os = ordens.find(
+      (o) =>
+        o.id === limpo ||
+        o.numero === limpo ||
+        o.numero === semZeros ||
+        o.numero === comZeros ||
+        o.numero.padStart(7, '0') === comZeros ||
+        (semZeros && o.numero.replace(/^0+/, '') === semZeros)
+    );
     return os || null;
   },
 

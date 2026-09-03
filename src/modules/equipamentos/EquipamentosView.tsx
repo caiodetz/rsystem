@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { Equipamento } from '@/core/types';
 import { EquipamentosService } from '@/core/services/equipamentosService';
+import { getUrlParam, updateUrlParams, clearUrlParams } from '@/core/utils/urlParams';
 import {
   Wrench,
   Plus,
@@ -21,12 +22,46 @@ import {
 
 export const EquipamentosView: React.FC = () => {
   const [equipamentos, setEquipamentos] = useState<Equipamento[]>([]);
-  const [filtroTipo, setFiltroTipo] = useState('Todos');
-  const [busca, setBusca] = useState('');
+  const [filtroTipo, setFiltroTipo] = useState<string>(() => getUrlParam('tipo') || 'Todos');
+  const [busca, setBusca] = useState<string>(() => getUrlParam('busca') || '');
   const [selecionado, setSelecionado] = useState<Equipamento | null>(null);
+  const [selectedRowId, setSelectedRowId] = useState<string | null>(null);
+  const urlRestauradaRef = React.useRef(false);
 
   // Aba do formulário Card
-  const [abaForm, setAbaForm] = useState<'identificacao' | 'complementares' | 'historico'>('identificacao');
+  const [abaForm, setAbaForm] = useState<'identificacao' | 'complementares' | 'historico'>(
+    () => (getUrlParam('aba') as any) || 'identificacao'
+  );
+
+  const handleMudarAba = (novaAba: typeof abaForm) => {
+    setAbaForm(novaAba);
+    updateUrlParams({ aba: novaAba });
+  };
+
+  const selecionarEquipamento = (eq: Equipamento, targetAba?: typeof abaForm) => {
+    setSelecionado(eq);
+    preencherForm(eq);
+    const aba = targetAba || abaForm;
+    if (targetAba) setAbaForm(targetAba);
+    updateUrlParams({
+      eqId: eq.id,
+      serie: eq.numeroSerie,
+      aba,
+    });
+  };
+
+  const handleFechar = () => {
+    setSelecionado(null);
+    clearUrlParams('eqId', 'serie', 'aba');
+  };
+
+  const handleRowClick = (eq: Equipamento) => {
+    if (selectedRowId === eq.id) {
+      selecionarEquipamento(eq);
+    } else {
+      setSelectedRowId(eq.id);
+    }
+  };
 
   // Form State
   const [formIdObjeto, setFormIdObjeto] = useState('17815');
@@ -66,6 +101,33 @@ export const EquipamentosView: React.FC = () => {
       busca: busca || undefined,
     });
     setEquipamentos(list);
+
+    // Restauração via URL (F5-Proof)
+    if (!urlRestauradaRef.current) {
+      urlRestauradaRef.current = true;
+      const paramEqId = getUrlParam('eqId');
+      const paramSerie = getUrlParam('serie');
+      const paramAba = (getUrlParam('aba') as any) || 'identificacao';
+
+      if (paramEqId || paramSerie) {
+        let found = list.find(
+          (e) =>
+            (paramEqId && e.id === paramEqId) ||
+            (paramSerie && e.numeroSerie.toLowerCase() === paramSerie.toLowerCase())
+        );
+        if (!found) {
+          const todos = await EquipamentosService.listar();
+          found = todos.find(
+            (e) =>
+              (paramEqId && e.id === paramEqId) ||
+              (paramSerie && e.numeroSerie.toLowerCase() === paramSerie.toLowerCase())
+          );
+        }
+        if (found) {
+          selecionarEquipamento(found, paramAba);
+        }
+      }
+    }
   };
 
   const preencherForm = (eq: Equipamento) => {
@@ -150,12 +212,15 @@ export const EquipamentosView: React.FC = () => {
   // SE UM EQUIPAMENTO ESTÁ ABERTO PARA EDIÇÃO (CARD FORM):
   if (selecionado) {
     return (
-      <div className="rarus-content-scroll">
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <button className="btn btn-secondary" onClick={() => setSelecionado(null)} type="button">
+      <div className="rarus-content-scroll rarus-fullscreen-view">
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
+          <button className="btn btn-secondary" onClick={handleFechar} type="button">
             <ArrowLeft size={14} />
             <span>Voltar para Lista de Equipamentos</span>
           </button>
+          <span style={{ fontSize: '12px', color: 'var(--color-text-muted)' }}>
+            Ficha Técnica em Tela Cheia • ID {formIdObjeto}
+          </span>
         </div>
 
         {/* CONTAINER CARD FORMULÁRIO (PADRÃO ESPECIFICAÇÃO & IMAGEM REAL) */}
@@ -185,7 +250,7 @@ export const EquipamentosView: React.FC = () => {
               <Save size={14} />
               <span>Salvar</span>
             </button>
-            <button className="btn btn-secondary" onClick={() => setSelecionado(null)} type="button">
+            <button className="btn btn-secondary" onClick={handleFechar} type="button">
               <ArrowLeft size={14} />
               <span>Cancelar</span>
             </button>
@@ -211,21 +276,21 @@ export const EquipamentosView: React.FC = () => {
           <div className="tabs-navigation">
             <button
               className={`tab-button ${abaForm === 'identificacao' ? 'active' : ''}`}
-              onClick={() => setAbaForm('identificacao')}
+              onClick={() => handleMudarAba('identificacao')}
               type="button"
             >
               1. Identificação
             </button>
             <button
               className={`tab-button ${abaForm === 'complementares' ? 'active' : ''}`}
-              onClick={() => setAbaForm('complementares')}
+              onClick={() => handleMudarAba('complementares')}
               type="button"
             >
               2. Campos Complementares (Lacres & Selos)
             </button>
             <button
               className={`tab-button ${abaForm === 'historico' ? 'active' : ''}`}
-              onClick={() => setAbaForm('historico')}
+              onClick={() => handleMudarAba('historico')}
               type="button"
             >
               3. Histórico de OS & Anotações
@@ -519,20 +584,29 @@ export const EquipamentosView: React.FC = () => {
         <div className="rarus-grid-header-tabs">
           <button
             className={`rarus-filter-tab-pill ${filtroTipo === 'Todos' ? 'active' : ''}`}
-            onClick={() => setFiltroTipo('Todos')}
+            onClick={() => {
+              setFiltroTipo('Todos');
+              updateUrlParams({ tipo: null });
+            }}
           >
             <span>Todos os Equipamentos</span>
             <span className="count">{equipamentos.length}</span>
           </button>
           <button
             className={`rarus-filter-tab-pill ${filtroTipo === 'Medidor de Umidade GEHAKA' ? 'active' : ''}`}
-            onClick={() => setFiltroTipo('Medidor de Umidade GEHAKA')}
+            onClick={() => {
+              setFiltroTipo('Medidor de Umidade GEHAKA');
+              updateUrlParams({ tipo: 'Medidor de Umidade GEHAKA' });
+            }}
           >
             <span>Medidores de Umidade GEHAKA</span>
           </button>
           <button
             className={`rarus-filter-tab-pill ${filtroTipo === 'Balança de Precisão' ? 'active' : ''}`}
-            onClick={() => setFiltroTipo('Balança de Precisão')}
+            onClick={() => {
+              setFiltroTipo('Balança de Precisão');
+              updateUrlParams({ tipo: 'Balança de Precisão' });
+            }}
           >
             <span>Balanças de Precisão</span>
           </button>
@@ -544,61 +618,72 @@ export const EquipamentosView: React.FC = () => {
             <input
               placeholder="Buscar por Modelo, Série, Patrimônio, INMETRO ou Cliente..."
               value={busca}
-              onChange={(e) => setBusca(e.target.value)}
+              onChange={(e) => {
+                const val = e.target.value;
+                setBusca(val);
+                updateUrlParams({ busca: val || null });
+              }}
             />
           </div>
         </div>
 
-        <table className="rarus-table">
-          <thead>
-            <tr>
-              <th>ID Objeto</th>
-              <th>Série</th>
-              <th>Modelo</th>
-              <th>Marca</th>
-              <th>INMETRO</th>
-              <th>Patrimônio</th>
-              <th>Cliente Titular</th>
-              <th>Status</th>
-              <th>Ações</th>
-            </tr>
-          </thead>
-          <tbody>
-            {equipamentos.map((eq) => (
-              <tr
-                key={eq.id}
-                style={{ cursor: 'pointer' }}
-                onClick={() => setSelecionado(eq)}
-              >
-                <td><code>17815</code></td>
-                <td><strong style={{ color: 'var(--color-primary-500)' }}>{eq.numeroSerie}</strong></td>
-                <td>{eq.modelo}</td>
-                <td>{eq.fabricante}</td>
-                <td>{eq.seloNovo || 'SELO-INM-88910'}</td>
-                <td>{eq.patrimonio || 'S/N'}</td>
-                <td>{eq.clienteNome}</td>
-                <td>
-                  <span className={`status-badge ${eq.status === 'Calibrado' ? 'ativo' : 'inativo'}`}>
-                    <span className="rarus-status-dot" />
-                    {eq.status}
-                  </span>
-                </td>
-                <td>
-                  <button
-                    className="btn btn-secondary"
-                    style={{ padding: '4px 10px', fontSize: '12px' }}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setSelecionado(eq);
-                    }}
-                  >
-                    Ficha Técnica
-                  </button>
-                </td>
+        <div className="rarus-table-container">
+          <table className="rarus-table">
+            <thead>
+              <tr>
+                <th>ID Objeto</th>
+                <th>Série</th>
+                <th>Modelo</th>
+                <th>Marca</th>
+                <th>INMETRO</th>
+                <th>Patrimônio</th>
+                <th>Cliente Titular</th>
+                <th>Status</th>
+                <th>Ações</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {equipamentos.map((eq) => {
+                const isSelected = selectedRowId === eq.id;
+                return (
+                  <tr
+                    key={eq.id}
+                    className={isSelected ? 'rarus-row-selected' : ''}
+                    onClick={() => handleRowClick(eq)}
+                    title={isSelected ? 'Clique novamente para abrir a ficha técnica em tela cheia' : 'Clique para selecionar o equipamento'}
+                  >
+                    <td><code>17815</code></td>
+                    <td><strong style={{ color: 'var(--color-primary-500)' }}>{eq.numeroSerie}</strong></td>
+                    <td>{eq.modelo}</td>
+                    <td>{eq.fabricante}</td>
+                    <td>{eq.seloNovo || 'SELO-INM-88910'}</td>
+                    <td>{eq.patrimonio || 'S/N'}</td>
+                    <td>{eq.clienteNome}</td>
+                    <td>
+                      <span className={`status-badge ${eq.status === 'Calibrado' ? 'ativo' : 'inativo'}`}>
+                        <span className="rarus-status-dot" />
+                        {eq.status}
+                      </span>
+                    </td>
+                    <td>
+                      <button
+                        className="btn btn-secondary"
+                        style={{ padding: '4px 10px', fontSize: '12px' }}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          selecionarEquipamento(eq);
+                        }}
+                        type="button"
+                      >
+                        Ficha Técnica
+                      </button>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );

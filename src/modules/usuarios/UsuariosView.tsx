@@ -22,6 +22,16 @@ export const UsuariosView: React.FC = () => {
   const [usuarios, setUsuarios] = useState<UsuarioFuncionario[]>([]);
   const [selecionado, setSelecionado] = useState<UsuarioFuncionario | null>(null);
   const [busca, setBusca] = useState('');
+  const [selectedRowId, setSelectedRowId] = useState<string | null>(null);
+
+  const handleRowClick = (u: UsuarioFuncionario) => {
+    if (selectedRowId === u.id) {
+      preencherForm(u);
+      setSelecionado(u);
+    } else {
+      setSelectedRowId(u.id);
+    }
+  };
 
   // Aba ativa do formulário Card
   const [abaForm, setAbaForm] = useState<'identificacao' | 'permissoes' | 'assinatura'>('identificacao');
@@ -127,12 +137,15 @@ export const UsuariosView: React.FC = () => {
   // SE UM FUNCIONÁRIO ESTÁ ABERTO PARA EDIÇÃO (CARD FORM):
   if (selecionado) {
     return (
-      <div className="rarus-content-scroll">
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+      <div className="rarus-content-scroll rarus-fullscreen-view">
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
           <button className="btn btn-secondary" onClick={() => setSelecionado(null)} type="button">
             <ArrowLeft size={14} />
             <span>Voltar para Lista de Funcionários</span>
           </button>
+          <span style={{ fontSize: '12px', color: 'var(--color-text-muted)' }}>
+            Ficha Funcional em Tela Cheia • Código {formCodigo}
+          </span>
         </div>
 
         <div className="card-container">
@@ -439,69 +452,73 @@ export const UsuariosView: React.FC = () => {
           </div>
         </div>
 
-        <table className="rarus-table">
-          <thead>
-            <tr>
-              <th>Código</th>
-              <th>Nome do Funcionário</th>
-              <th>Cargo</th>
-              <th>E-mail</th>
-              <th>Habilitação Metrológica</th>
-              <th>Status</th>
-              <th>Ações</th>
-            </tr>
-          </thead>
-          <tbody>
-            {usuarios.map((u) => (
-              <tr
-                key={u.id}
-                style={{ cursor: 'pointer' }}
-                onClick={() => {
-                  preencherForm(u);
-                  setSelecionado(u);
-                }}
-              >
-                <td><code>058</code></td>
-                <td><strong>{u.nome}</strong></td>
-                <td>{u.cargo}</td>
-                <td>{u.email}</td>
-                <td>
-                  <span
-                    style={{
-                      fontSize: '11px',
-                      background: 'var(--color-primary-100)',
-                      color: 'var(--color-primary-500)',
-                      padding: '2px 8px',
-                      borderRadius: 4,
-                      fontWeight: 600,
-                    }}
-                  >
-                    {u.permissoesCalibracao.map((p) => p.tipoEquipamento).join(', ') || 'Administrativo'}
-                  </span>
-                </td>
-                <td>
-                  <span className={`status-badge ${u.ativo ? 'ativo' : 'inativo'}`}>
-                    <span className="rarus-status-dot" />
-                    {u.ativo ? 'Ativo' : 'Inativo'}
-                  </span>
-                </td>
-                <td>
-                  <button
-                    className="btn btn-secondary"
-                    style={{ padding: '4px 10px', fontSize: '12px' }}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      preencherForm(u);
-                      setSelecionado(u);
-                    }}
-                  >
-                    Editar
-                  </button>
-                </td>
+        <div className="rarus-table-container">
+          <table className="rarus-table">
+            <thead>
+              <tr>
+                <th>Código</th>
+                <th>Nome do Funcionário</th>
+                <th>Cargo</th>
+                <th>E-mail</th>
+                <th>Habilitação Metrológica</th>
+                <th>Status</th>
+                <th>Ações</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {usuarios.map((u) => {
+                const isSelected = selectedRowId === u.id;
+                return (
+                  <tr
+                    key={u.id}
+                    className={isSelected ? 'rarus-row-selected' : ''}
+                    onClick={() => handleRowClick(u)}
+                    title={isSelected ? 'Clique novamente para abrir a ficha em tela cheia' : 'Clique para selecionar o funcionário'}
+                  >
+                    <td><code>058</code></td>
+                    <td><strong>{u.nome}</strong></td>
+                    <td>{u.cargo}</td>
+                    <td>{u.email}</td>
+                    <td>
+                      <span
+                        style={{
+                          fontSize: '11px',
+                          background: 'var(--color-primary-100)',
+                          color: 'var(--color-primary-500)',
+                          padding: '2px 8px',
+                          borderRadius: 4,
+                          fontWeight: 600,
+                        }}
+                      >
+                        {u.permissoesCalibracao.map((p) => p.tipoEquipamento).join(', ') || 'Administrativo'}
+                      </span>
+                    </td>
+                    <td>
+                      <span className={`status-badge ${u.ativo ? 'ativo' : 'inativo'}`}>
+                        <span className="rarus-status-dot" />
+                        {u.ativo ? 'Ativo' : 'Inativo'}
+                      </span>
+                    </td>
+                    <td>
+                      <button
+                        className="btn btn-secondary"
+                        style={{ padding: '4px 10px', fontSize: '12px' }}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          preencherForm(u);
+                          setSelecionado(u);
+                        }}
+                        type="button"
+                      >
+                        Editar
+                      </button>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );

@@ -31,6 +31,11 @@ export const RelatosService = {
     }
   },
 
+  obterTemplateOriginal(id: string): string | null {
+    const original = MOCK_RELATOS.find((r) => r.id === id);
+    return original ? original.templateHtmlCertificado : null;
+  },
+
   verificarPermissaoTecnico(tecnicoId: string, tipoCalibracaoId: string, tipoEquipamento: string): {
     permitido: boolean;
     motivo?: string;

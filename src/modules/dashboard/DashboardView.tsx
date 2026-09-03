@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useTabs } from '@/core/context/TabContext';
 import {
   MOCK_EQUIPAMENTOS,
@@ -13,20 +13,16 @@ import { PadroesBasaisService } from '@/core/services/padroesBasaisService';
 import {
   Wrench,
   Activity,
-  AlertTriangle,
-  CheckCircle2,
-  FileText,
-  Clock,
-  ArrowRight,
+  ChevronRight,
   ShieldAlert,
   Boxes,
   Users,
-  ChevronRight,
-  Sparkles,
+  ArrowRight,
 } from 'lucide-react';
 
 export const DashboardView: React.FC = () => {
   const { openTab } = useTabs();
+  const [selectedRowId, setSelectedRowId] = useState<string | null>(null);
 
   const totalEquipamentos = MOCK_EQUIPAMENTOS.length;
   const calibrados = MOCK_EQUIPAMENTOS.filter((e) => e.status === 'Calibrado').length;
@@ -42,6 +38,22 @@ export const DashboardView: React.FC = () => {
   const padraoCritico = padroesAlerta.find(
     (p) => p.calc.status === 'Alerta30dCritico' || p.calc.status === 'VencidoBloqueado'
   );
+
+  const handleRowClick = (osId: string) => {
+    if (selectedRowId === osId) {
+      // 2º clique na mesma linha: abre a OS
+      openTab({
+        id: 'tab-ordens-servico',
+        title: 'Ordens de Serviço',
+        iconName: 'ClipboardList',
+        moduleKey: 'ordens-servico',
+        params: { osIdSelecionada: osId },
+      });
+    } else {
+      // 1º clique: apenas seleciona a linha
+      setSelectedRowId(osId);
+    }
+  };
 
   return (
     <div className="rarus-content-scroll">
@@ -59,8 +71,8 @@ export const DashboardView: React.FC = () => {
       {padraoCritico && (
         <div
           style={{
-            backgroundColor: 'var(--rarus-danger-bg)',
-            border: '1px solid var(--rarus-danger)',
+            backgroundColor: 'var(--status-danger-bg)',
+            border: '1px solid var(--status-danger-text)',
             borderRadius: 'var(--radius-lg)',
             padding: '16px 20px',
             display: 'flex',
@@ -70,12 +82,12 @@ export const DashboardView: React.FC = () => {
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-            <ShieldAlert size={28} color="var(--rarus-danger)" />
+            <ShieldAlert size={28} color="var(--status-danger-text)" />
             <div>
-              <div style={{ fontWeight: 800, fontSize: '14.5px', color: 'var(--rarus-danger)' }}>
+              <div style={{ fontWeight: 800, fontSize: '14.5px', color: 'var(--status-danger-text)' }}>
                 AVISO DE BLOQUEIO METROLÓGICO: PADRÃO BASAL [{padraoCritico.codigoIdentificador}]
               </div>
-              <div style={{ fontSize: '12.5px', color: 'var(--rarus-danger)', marginTop: 2 }}>
+              <div style={{ fontSize: '12.5px', color: 'var(--status-danger-text)', marginTop: 2 }}>
                 {padraoCritico.calc.mensagemAlerta}
               </div>
             </div>
@@ -91,6 +103,7 @@ export const DashboardView: React.FC = () => {
                 moduleKey: 'padroes',
               })
             }
+            type="button"
           >
             <span>Ver Padrões Basais</span>
             <ChevronRight size={14} />
@@ -147,145 +160,138 @@ export const DashboardView: React.FC = () => {
         </div>
       </div>
 
-      {/* Painel Duplo: Últimas OS e Padrões Basais */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1.8fr 1.2fr', gap: '20px', alignItems: 'start' }}>
-        {/* Tabela de Ordens de Serviço Recentes */}
-        <div className="rarus-datagrid-container">
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              padding: '14px 18px',
-              borderBottom: '1px solid var(--color-border-subtle)',
-            }}
-          >
-            <h3 style={{ margin: 0, fontSize: '15px', fontWeight: 600 }}>
+      {/* Tabela de Ordens de Serviço Expandida para 100% da Largura Inferior */}
+      <div className="rarus-datagrid-container">
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            padding: '16px 20px',
+            borderBottom: '1px solid var(--color-border-subtle)',
+            backgroundColor: 'var(--color-bg-surface)',
+          }}
+        >
+          <div>
+            <h3 style={{ margin: 0, fontSize: '16px', fontWeight: 600, color: 'var(--color-text-main)' }}>
               Ordens de Serviço em Andamento
             </h3>
-            <button
-              className="btn btn-secondary"
-              style={{ fontSize: '12px', padding: '4px 10px' }}
-              onClick={() =>
-                openTab({
-                  id: 'tab-ordens-servico',
-                  title: 'Ordens de Serviço',
-                  iconName: 'ClipboardList',
-                  moduleKey: 'ordens-servico',
-                })
-              }
-            >
-              <span>Ver Todas as OS</span>
-              <ArrowRight size={13} />
-            </button>
+            <span style={{ fontSize: '12px', color: 'var(--color-text-muted)' }}>
+              {selectedRowId ? 'Clique novamente na linha selecionada para abrir a OS' : 'Selecione uma linha para visualizar ou clique em "Ver Todas as OS"'}
+            </span>
           </div>
+          <button
+            className="btn btn-secondary"
+            style={{ fontSize: '12px', padding: '6px 12px' }}
+            onClick={() =>
+              openTab({
+                id: 'tab-ordens-servico',
+                title: 'Ordens de Serviço',
+                iconName: 'ClipboardList',
+                moduleKey: 'ordens-servico',
+              })
+            }
+            type="button"
+          >
+            <span>Ver Todas as OS</span>
+            <ArrowRight size={13} />
+          </button>
+        </div>
 
+        {/* Container com scroll horizontal garantido */}
+        <div className="rarus-table-container">
           <table className="rarus-table">
             <thead>
               <tr>
                 <th>Nº OS</th>
-                <th>Cliente</th>
-                <th>Tipo</th>
-                <th>Técnico</th>
+                <th>Cliente / Titular</th>
+                <th>Tipo de Serviço</th>
+                <th>Equipamentos Vinculados</th>
+                <th>Técnico Responsável</th>
+                <th>Data Abertura</th>
+                <th>Previsão Entrega</th>
+                <th>Valor Total</th>
                 <th>Status</th>
+                <th>Ação</th>
               </tr>
             </thead>
             <tbody>
-              {MOCK_ORDENS_SERVICO.map((os) => (
-                <tr key={os.id}>
-                  <td>
-                    <strong style={{ color: 'var(--color-primary-500)' }}>#{os.numero}</strong>
-                  </td>
-                  <td>{os.clienteNome}</td>
-                  <td style={{ fontSize: '12px' }}>{os.tipo}</td>
-                  <td>{os.tecnicoNome}</td>
-                  <td>
-                    <span className="status-badge pendente">
-                      <span className="rarus-status-dot" />
-                      {os.status}
-                    </span>
-                  </td>
-                </tr>
-              ))}
+              {MOCK_ORDENS_SERVICO.map((os) => {
+                const isSelected = selectedRowId === os.id;
+                return (
+                  <tr
+                    key={os.id}
+                    className={isSelected ? 'rarus-row-selected' : ''}
+                    onClick={() => handleRowClick(os.id)}
+                    title={isSelected ? 'Clique novamente para abrir esta OS' : 'Clique para selecionar'}
+                  >
+                    <td>
+                      <strong style={{ color: 'var(--color-primary-500)', fontFamily: 'monospace' }}>
+                        #{os.numero}
+                      </strong>
+                    </td>
+                    <td>
+                      <strong style={{ color: 'var(--color-text-main)' }}>{os.clienteNome}</strong>
+                    </td>
+                    <td style={{ fontSize: '12px' }}>{os.tipo}</td>
+                    <td>
+                      <span
+                        style={{
+                          fontSize: '11.5px',
+                          background: 'var(--color-primary-100)',
+                          color: 'var(--color-primary-500)',
+                          padding: '2px 8px',
+                          borderRadius: 4,
+                          fontWeight: 600,
+                        }}
+                      >
+                        {os.equipamentos.length} aparelho(s)
+                      </span>
+                    </td>
+                    <td>{os.tecnicoNome}</td>
+                    <td>{os.dataAbertura}</td>
+                    <td>{os.dataPrevisao}</td>
+                    <td>
+                      <strong>R$ {os.valorTotalGeral.toFixed(2)}</strong>
+                    </td>
+                    <td>
+                      <span
+                        className={`status-badge ${
+                          os.status === 'Equipamento Pronto' || os.status === 'Faturada' || os.status === 'Encerrada'
+                            ? 'ativo'
+                            : os.status === 'Aguardando Peças' || os.status === 'Sem Conserto'
+                            ? 'inativo'
+                            : 'pendente'
+                        }`}
+                      >
+                        <span className="rarus-status-dot" />
+                        {os.status}
+                      </span>
+                    </td>
+                    <td>
+                      <button
+                        className="btn btn-secondary"
+                        style={{ padding: '3px 8px', fontSize: '11.5px' }}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          openTab({
+                            id: 'tab-ordens-servico',
+                            title: 'Ordens de Serviço',
+                            iconName: 'ClipboardList',
+                            moduleKey: 'ordens-servico',
+                            params: { osIdSelecionada: os.id },
+                          });
+                        }}
+                        type="button"
+                      >
+                        Abrir OS
+                      </button>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
-        </div>
-
-        {/* Padrões Basais de Referência & Status */}
-        <div
-          style={{
-            backgroundColor: 'var(--bg-card)',
-            border: '1px solid var(--border-subtle)',
-            borderRadius: 'var(--radius-lg)',
-            padding: '20px',
-            boxShadow: 'var(--shadow-sm)',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '14px',
-          }}
-        >
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <h3 style={{ margin: 0, fontSize: '15px', fontWeight: 700 }}>Padrões Basais (RBC)</h3>
-            <button
-              className="btn-secondary-rarus"
-              style={{ fontSize: '11.5px', padding: '4px 8px' }}
-              onClick={() =>
-                openTab({
-                  id: 'tab-padroes',
-                  title: 'Padrões Basais',
-                  iconName: 'ShieldCheck',
-                  moduleKey: 'padroes',
-                })
-              }
-            >
-              Gerenciar
-            </button>
-          </div>
-
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-            {padroesAlerta.map((p) => {
-              const isCritico = p.calc.status === 'VencidoBloqueado';
-              const isWarning = p.calc.status === 'Alerta60d' || p.calc.status === 'Alerta90d';
-
-              return (
-                <div
-                  key={p.id}
-                  style={{
-                    background: 'var(--bg-app)',
-                    border: '1px solid var(--border-subtle)',
-                    borderRadius: 6,
-                    padding: '10px 12px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                  }}
-                >
-                  <div>
-                    <div style={{ fontWeight: 700, fontSize: '13px', color: 'var(--rarus-navy)' }}>
-                      [{p.codigoIdentificador}] {p.modelo}
-                    </div>
-                    <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
-                      Validade: {p.dataValidade} • Cert: {p.certificadoRBC}
-                    </div>
-                  </div>
-
-                  <span
-                    className={`rarus-status-pill ${
-                      isCritico
-                        ? 'status-vencido'
-                        : isWarning
-                        ? 'status-alerta'
-                        : 'status-calibrado'
-                    }`}
-                    style={{ fontSize: '10.5px' }}
-                  >
-                    <span className="rarus-status-dot" />
-                    {isCritico ? 'Bloqueado' : isWarning ? 'Atenção' : 'Válido'}
-                  </span>
-                </div>
-              );
-            })}
-          </div>
         </div>
       </div>
     </div>

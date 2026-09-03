@@ -26,6 +26,7 @@ export const PadroesView: React.FC = () => {
   >([]);
   const [busca, setBusca] = useState('');
   const [modalNovo, setModalNovo] = useState(false);
+  const [selectedRowId, setSelectedRowId] = useState<string | null>(null);
 
   // Form State
   const [codigoIdentificador, setCodigoIdentificador] = useState('');
@@ -201,94 +202,103 @@ export const PadroesView: React.FC = () => {
           </div>
         </div>
 
-        <table className="rarus-table">
-          <thead>
-            <tr>
-              <th>Identificador</th>
-              <th>Descrição do Padrão</th>
-              <th>Grandeza</th>
-              <th>Certificado RBC</th>
-              <th>Órgão Calibrador</th>
-              <th>Validade</th>
-              <th>Escala de Alerta</th>
-              <th>Status Operacional</th>
-            </tr>
-          </thead>
-          <tbody>
-            {padroes.map((p) => {
-              let badgeClasse = 'status-calibrado';
-              let badgeTexto = '● Válido';
+        <div className="rarus-table-container">
+          <table className="rarus-table">
+            <thead>
+              <tr>
+                <th>Identificador</th>
+                <th>Descrição do Padrão</th>
+                <th>Grandeza</th>
+                <th>Certificado RBC</th>
+                <th>Órgão Calibrador</th>
+                <th>Validade</th>
+                <th>Escala de Alerta</th>
+                <th>Status Operacional</th>
+              </tr>
+            </thead>
+            <tbody>
+              {padroes.map((p) => {
+                let badgeClasse = 'status-calibrado';
+                let badgeTexto = '● Válido';
 
-              if (p.status === 'Alerta90d') {
-                badgeClasse = 'status-alerta';
-                badgeTexto = `⚠ Alerta 90d (${p.diasRestantes} dias)`;
-              } else if (p.status === 'Alerta60d') {
-                badgeClasse = 'status-alerta';
-                badgeTexto = `⚠ Atenção 60d (${p.diasRestantes} dias)`;
-              } else if (p.status === 'Alerta30dCritico') {
-                badgeClasse = 'status-vencido';
-                badgeTexto = `🚨 CRÍTICO (${p.diasRestantes} dias)`;
-              } else if (p.status === 'VencidoBloqueado') {
-                badgeClasse = 'status-vencido';
-                badgeTexto = '🔒 BLOQUEADO';
-              }
+                if (p.status === 'Alerta90d') {
+                  badgeClasse = 'status-alerta';
+                  badgeTexto = `⚠ Alerta 90d (${p.diasRestantes} dias)`;
+                } else if (p.status === 'Alerta60d') {
+                  badgeClasse = 'status-alerta';
+                  badgeTexto = `⚠ Atenção 60d (${p.diasRestantes} dias)`;
+                } else if (p.status === 'Alerta30dCritico') {
+                  badgeClasse = 'status-vencido';
+                  badgeTexto = `🚨 CRÍTICO (${p.diasRestantes} dias)`;
+                } else if (p.status === 'VencidoBloqueado') {
+                  badgeClasse = 'status-vencido';
+                  badgeTexto = '🔒 BLOQUEADO';
+                }
 
-              return (
-                <tr key={p.id}>
-                  <td>
-                    <span
-                      style={{
-                        fontFamily: 'monospace',
-                        fontWeight: 800,
-                        fontSize: '13px',
-                        color: 'var(--rarus-cyan)',
-                        background: 'var(--bg-app)',
-                        padding: '4px 8px',
-                        borderRadius: 4,
-                      }}
-                    >
-                      {p.codigoIdentificador}
-                    </span>
-                  </td>
-                  <td>
-                    <div style={{ fontWeight: 600 }}>{p.descricao}</div>
-                    <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
-                      {p.fabricante} {p.modelo} • Série: {p.numeroSerie}
-                    </div>
-                  </td>
-                  <td>
-                    <span style={{ fontSize: '12px' }}>{p.grandeza}</span>
-                  </td>
-                  <td>
-                    <strong style={{ fontSize: '12px', color: 'var(--rarus-navy)' }}>
-                      {p.certificadoRBC}
-                    </strong>
-                  </td>
-                  <td style={{ fontSize: '12px' }}>{p.orgaoCalibrador}</td>
-                  <td>
-                    <div style={{ fontWeight: 700, fontSize: '13px' }}>{p.dataValidade}</div>
-                  </td>
-                  <td>
-                    <span className={`rarus-status-pill ${badgeClasse}`}>
-                      {badgeTexto}
-                    </span>
-                  </td>
-                  <td>
-                    {p.bloqueado ? (
-                      <span style={{ color: 'var(--rarus-danger)', fontWeight: 700, fontSize: '12px' }}>
-                        Bloqueado p/ Certificados
+                const isSelected = selectedRowId === p.id;
+
+                return (
+                  <tr
+                    key={p.id}
+                    className={isSelected ? 'rarus-row-selected' : ''}
+                    onClick={() => setSelectedRowId(isSelected ? null : p.id)}
+                    title={isSelected ? 'Linha selecionada' : 'Clique para selecionar o padrão'}
+                  >
+                    <td>
+                      <span
+                        style={{
+                          fontFamily: 'monospace',
+                          fontWeight: 800,
+                          fontSize: '13px',
+                          color: 'var(--color-primary-500)',
+                          background: 'var(--color-primary-50)',
+                          padding: '4px 8px',
+                          borderRadius: 4,
+                        }}
+                      >
+                        {p.codigoIdentificador}
                       </span>
-                    ) : (
-                      <span style={{ color: 'var(--rarus-success)', fontWeight: 600, fontSize: '12px' }}>
-                        ✓ Liberado p/ Uso
+                    </td>
+                    <td>
+                      <div style={{ fontWeight: 600 }}>{p.descricao}</div>
+                      <div style={{ fontSize: '11px', color: 'var(--color-text-muted)' }}>
+                        {p.fabricante} {p.modelo} • Série: {p.numeroSerie}
+                      </div>
+                    </td>
+                    <td>
+                      <span style={{ fontSize: '12px' }}>{p.grandeza}</span>
+                    </td>
+                    <td>
+                      <strong style={{ fontSize: '12px', color: 'var(--color-text-main)' }}>
+                        {p.certificadoRBC}
+                      </strong>
+                    </td>
+                    <td style={{ fontSize: '12px' }}>{p.orgaoCalibrador}</td>
+                    <td>
+                      <div style={{ fontWeight: 700, fontSize: '13px' }}>{p.dataValidade}</div>
+                    </td>
+                    <td>
+                      <span className={`rarus-status-pill ${badgeClasse}`}>
+                        {badgeTexto}
                       </span>
-                    )}
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
+                    </td>
+                    <td>
+                      {p.bloqueado ? (
+                        <span style={{ color: 'var(--status-danger-text)', fontWeight: 700, fontSize: '12px' }}>
+                          Bloqueado p/ Certificados
+                        </span>
+                      ) : (
+                        <span style={{ color: 'var(--status-success-text)', fontWeight: 600, fontSize: '12px' }}>
+                          ✓ Liberado p/ Uso
+                        </span>
+                      )}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
       </div>
 
       {/* Modal Novo Padrão */}

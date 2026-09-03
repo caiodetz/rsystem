@@ -111,6 +111,10 @@ export interface Equipamento {
   seloAnterior?: string;
   lacreNovo?: string;
   seloNovo?: string;
+  anoFabricacao?: string;
+  dataServicoAnterior?: string;
+  portariaInmetro?: string;
+  temEtiquetaAnterior?: string;
   dataUltimaCalibracao: string;
   dataProximaCalibracao: string;
   status: StatusEquipamento;
@@ -176,7 +180,8 @@ export type TipoOS =
   | 'Calibração em Campo'
   | 'Manutenção Preventiva'
   | 'Manutenção Corretiva'
-  | 'Ensaio Técnico';
+  | 'Ensaio Técnico'
+  | 'Laboratório e Vendas';
 
 export type PrioridadeOS = 'Baixa' | 'Média' | 'Alta' | 'Urgente';
 
@@ -196,9 +201,13 @@ export interface OrdemServicoItemPeca {
   descricao: string;
   quantidade: number;
   valorUnitario: number;
-  tipoItem: 'Peca' | 'Servico'; // Serviço compõe preço e emite NFS-e; Peça emite NF-e
+  valorDesconto?: number;
+  percentualDesconto?: number;
+  valorTotal?: number;
+  tipoItem?: 'Peca' | 'Servico';
+  estoqueOrigemId?: string;
   numeroSeriePeca?: string;
-  estoqueOrigemId: string;
+  seriaisOuIds?: string[];
 }
 
 export interface OrdemServico {
@@ -214,7 +223,7 @@ export interface OrdemServico {
   tecnicoId: string;
   tecnicoNome: string;
   dataAbertura: string;
-  dataPrevisao: string;
+  dataPrevisao?: string;
   dataConclusao?: string;
   descricaoProblema: string;
   laudoTecnico?: string;
@@ -225,10 +234,11 @@ export interface OrdemServico {
 }
 
 // ==========================================
-// 5. ESTOQUE MULTI-LOCAL (CENTRAL & TÉCNICOS)
+// 5. ESTOQUE & MOVIMENTAÇÕES (DUAL FÍSICO/FISCAL)
 // ==========================================
 export interface EstoqueLocal {
   id: string;
+  codigo?: string;
   tipo: 'Central' | 'Tecnico';
   nome: string; // ex: 'Estoque Central - Matriz', 'Estoque Veículo - Técnico Itamar'
   tecnicoResponsavelId?: string;
@@ -264,6 +274,50 @@ export interface MovimentacaoEstoque {
   status: 'PendenteAprovacao' | 'Concluida' | 'Cancelada';
   motivo?: string;
 }
+
+export interface ItemTransferenciaEstoque {
+  seq: string;
+  itemCodigo: string;
+  descricao: string;
+  unidade: string;
+  quantidade: number;
+  saldoFisicoOrigem: number;
+  precoUnitario: number;
+  valorItem: number;
+  valorDesconto?: number;
+  percentualDesconto?: number;
+  func1?: string;
+  func2?: string;
+  func3?: string;
+}
+
+export interface TransferenciaEstoque {
+  id: string;
+  identificador: string;
+  numeroMovimento: string;
+  serie: string;
+  tipoMovimento: string;
+  status: 'Normal' | 'Pendente' | 'Concluido' | 'Cancelado';
+  horaEmissao: string;
+  dataEmissao: string;
+  usuarioInclusao: string;
+  filialOrigem: string;
+  origemLocalId: string;
+  origemLocalNome: string;
+  filialDestino: string;
+  destinoLocalId: string;
+  destinoLocalNome: string;
+  funcionarioCodigo: string;
+  funcionarioNome: string;
+  observacoes?: string;
+  itens: ItemTransferenciaEstoque[];
+  quantidadeTotal: number;
+  pesoTotal: number;
+  valorBruto: number;
+  subTotal: number;
+  valorLiquido: number;
+}
+
 
 // ==========================================
 // 6. MOTOR DE CALIBRAÇÕES POR RELATOS & TEMPLATES HTML
@@ -398,4 +452,36 @@ export interface ApiResponse<T> {
     pagina?: number;
     limite?: number;
   };
+}
+
+// ==========================================
+// 8.1 MODELOS DE RELATÓRIOS E DOCUMENTOS A4 (TEMPLATES)
+// ==========================================
+export type CategoriaModeloDocumento =
+  | 'Ordem de Serviço'
+  | 'Etiquetas'
+  | 'Certificados'
+  | 'Estoque'
+  | 'Fiscal';
+
+export type FormatoPapelDocumento =
+  | 'A4 Retrato'
+  | 'A4 Paisagem'
+  | 'Etiqueta Lab'
+  | 'Etiqueta Térmica';
+
+export interface ModeloDocumentoRelatorio {
+  id: string;
+  codigo?: string;
+  nome: string;
+  descricao: string;
+  categoria: CategoriaModeloDocumento;
+  tipoMovimentoVinculado: string;
+  disponivelNaImpressaoOS: boolean;
+  formatoPapel: FormatoPapelDocumento;
+  templateHtml: string;
+  versao: string;
+  dataAtualizacao: string;
+  ativo: boolean;
+  variaveisDisponiveis?: string[];
 }

@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { Cliente, Equipamento } from '@/core/types';
 import { ClientesService } from '@/core/services/clientesService';
 import { EquipamentosService } from '@/core/services/equipamentosService';
+import { getUrlParam, updateUrlParams, clearUrlParams } from '@/core/utils/urlParams';
 import {
   Users,
   Plus,
@@ -22,14 +23,47 @@ import {
 
 export const ClientesView: React.FC = () => {
   const [clientes, setClientes] = useState<Cliente[]>([]);
-  const [busca, setBusca] = useState('');
-  const [segmentoFiltro, setSegmentoFiltro] = useState<string>('todos');
+  const [busca, setBusca] = useState<string>(() => getUrlParam('busca') || '');
+  const [segmentoFiltro, setSegmentoFiltro] = useState<string>(() => getUrlParam('segmento') || 'todos');
   const [clienteSelecionado, setClienteSelecionado] = useState<Cliente | null>(null);
+  const [selectedRowId, setSelectedRowId] = useState<string | null>(null);
+  const urlRestauradaRef = React.useRef(false);
 
-  // Aba ativa do formulário card
+  // Aba ativa do formulário card (inicializada via URL)
   const [abaForm, setAbaForm] = useState<
     'identificacao' | 'endereco' | 'observacoes' | 'tributacao' | 'confidencial' | 'equipamentos'
-  >('identificacao');
+  >(() => (getUrlParam('aba') as any) || 'identificacao');
+
+  const handleMudarAba = (novaAba: typeof abaForm) => {
+    setAbaForm(novaAba);
+    updateUrlParams({ aba: novaAba });
+  };
+
+  const selecionarCliente = (c: Cliente, targetAba?: typeof abaForm) => {
+    setClienteSelecionado(c);
+    preencherForm(c);
+    const aba = targetAba || abaForm;
+    if (targetAba) setAbaForm(targetAba);
+    updateUrlParams({
+      cliente: c.codigo,
+      clienteId: c.id,
+      novoCliente: null,
+      aba,
+    });
+  };
+
+  const handleFecharFormulario = () => {
+    setClienteSelecionado(null);
+    clearUrlParams('cliente', 'clienteId', 'novoCliente', 'aba');
+  };
+
+  const handleRowClick = (c: Cliente) => {
+    if (selectedRowId === c.id) {
+      selecionarCliente(c);
+    } else {
+      setSelectedRowId(c.id);
+    }
+  };
 
   // Equipamentos do cliente selecionado
   const [equipamentosCliente, setEquipamentosCliente] = useState<Equipamento[]>([]);
@@ -68,14 +102,27 @@ export const ClientesView: React.FC = () => {
   const [formIndicadorIe, setFormIndicadorIe] = useState('1 - Contribuinte ICMS');
   const [formRegimeTributario, setFormRegimeTributario] = useState('1 - Simples Nacional');
 
-  // Modal Novo Equipamento Vinculado
+  // Modal Equipamento Vinculado (Formulário completo idêntico ao de Equipamentos)
   const [modalNovoEquipamento, setModalNovoEquipamento] = useState(false);
+  const [eqAbaForm, setEqAbaForm] = useState<'identificacao' | 'complementares' | 'historico'>('identificacao');
+  const [eqIdObjeto, setEqIdObjeto] = useState('17815');
   const [eqModelo, setEqModelo] = useState('G650i');
   const [eqFabricante, setEqFabricante] = useState('GEHAKA');
   const [eqSerie, setEqSerie] = useState('');
   const [eqPatrimonio, setEqPatrimonio] = useState('');
-  const [eqLacreNovo, setEqLacreNovo] = useState('');
-  const [eqSeloNovo, setEqSeloNovo] = useState('');
+  const [eqInmetro, setEqInmetro] = useState('SELO-INM-88910');
+  const [eqInativo, setEqInativo] = useState(false);
+  const [eqObs, setEqObs] = useState('');
+  // Campos Complementares (Aba 2)
+  const [eqLacreAnterior, setEqLacreAnterior] = useState('LAC-2024-0091');
+  const [eqSeloAnterior, setEqSeloAnterior] = useState('SELO-2024-881');
+  const [eqLacreNovo, setEqLacreNovo] = useState('LAC-2026-4401');
+  const [eqSeloNovo, setEqSeloNovo] = useState('SELO-INM-88910');
+  const [eqAnoFabricacao, setEqAnoFabricacao] = useState('2023');
+  const [eqDataServicoAnterior, setEqDataServicoAnterior] = useState('2025-02-15');
+  const [eqDataCalibracao, setEqDataCalibracao] = useState(new Date().toISOString().split('T')[0]);
+  const [eqPortaria, setEqPortaria] = useState('Portaria INMETRO/DIMEL Nº 0296/2013');
+  const [eqTemEtiquetaAnterior, setEqTemEtiquetaAnterior] = useState('Sim, etiqueta Elgin térmica preservada');
 
   useEffect(() => {
     carregarClientes();
@@ -94,6 +141,36 @@ export const ClientesView: React.FC = () => {
       itens = itens.filter((c) => c.segmento.toLowerCase().includes(segmentoFiltro.toLowerCase()));
     }
     setClientes(itens);
+
+    // Restauração de formulário de Cliente via URL (F5-Proof)
+    if (!urlRestauradaRef.current) {
+      urlRestauradaRef.current = true;
+      const paramNovo = getUrlParam('novoCliente');
+      const paramCliente = getUrlParam('cliente');
+      const paramClienteId = getUrlParam('clienteId');
+      const paramAba = (getUrlParam('aba') as any) || 'identificacao';
+
+      if (paramNovo === 'true') {
+        handleAbrirNovoCliente(paramAba);
+      } else if (paramCliente || paramClienteId) {
+        let found = itens.find(
+          (c) =>
+            (paramCliente && (c.codigo.toUpperCase() === paramCliente.toUpperCase() || c.razaoSocial.toLowerCase().includes(paramCliente.toLowerCase()))) ||
+            (paramClienteId && c.id === paramClienteId)
+        );
+        if (!found) {
+          const todos = await ClientesService.listar();
+          found = todos.find(
+            (c) =>
+              (paramCliente && (c.codigo.toUpperCase() === paramCliente.toUpperCase() || c.razaoSocial.toLowerCase().includes(paramCliente.toLowerCase()))) ||
+              (paramClienteId && c.id === paramClienteId)
+          );
+        }
+        if (found) {
+          selecionarCliente(found, paramAba);
+        }
+      }
+    }
   };
 
   const carregarEquipamentos = async (clienteId: string) => {
@@ -118,7 +195,7 @@ export const ClientesView: React.FC = () => {
     setFormAtivo(c.status === 'Ativo');
   };
 
-  const handleAbrirNovo = () => {
+  const handleAbrirNovoCliente = (targetAba?: typeof abaForm) => {
     const novoCodigo = `C${String(clientes.length + 1).padStart(5, '0')}`;
     setFormCodigo(novoCodigo);
     setFormRazaoSocial('');
@@ -154,7 +231,14 @@ export const ClientesView: React.FC = () => {
       observacoesAvulsas: '',
       status: 'Ativo',
     });
-    setAbaForm('identificacao');
+    const aba = targetAba || 'identificacao';
+    setAbaForm(aba);
+    updateUrlParams({
+      novoCliente: 'true',
+      cliente: null,
+      clienteId: null,
+      aba,
+    });
   };
 
   const handleSalvar = async (e: React.FormEvent) => {
@@ -194,9 +278,56 @@ export const ClientesView: React.FC = () => {
     carregarClientes();
   };
 
+  const handleAbrirNovoEquipamento = () => {
+    setEqIdObjeto(String(17800 + Math.floor(Math.random() * 100)));
+    setEqModelo('G650i');
+    setEqFabricante('GEHAKA');
+    setEqSerie('');
+    setEqPatrimonio('');
+    setEqInmetro('SELO-INM-88910');
+    setEqInativo(false);
+    setEqObs('');
+    setEqLacreAnterior('LAC-2024-0091');
+    setEqSeloAnterior('SELO-2024-881');
+    setEqLacreNovo('LAC-2026-4401');
+    setEqSeloNovo('SELO-INM-88910');
+    setEqAnoFabricacao('2023');
+    setEqDataServicoAnterior('2025-02-15');
+    setEqDataCalibracao(new Date().toISOString().split('T')[0]);
+    setEqPortaria('Portaria INMETRO/DIMEL Nº 0296/2013');
+    setEqTemEtiquetaAnterior('Sim, etiqueta Elgin térmica preservada');
+    setEqAbaForm('identificacao');
+    setModalNovoEquipamento(true);
+  };
+
+  const handleEditarEquipamento = (eq: Equipamento) => {
+    setEqIdObjeto(eq.id.replace(/\D/g, '') || '17815');
+    setEqModelo(eq.modelo);
+    setEqFabricante(eq.fabricante);
+    setEqSerie(eq.numeroSerie);
+    setEqPatrimonio(eq.patrimonio || '');
+    setEqInmetro(eq.seloNovo || 'SELO-INM-88910');
+    setEqInativo(eq.status === 'Em Manutenção');
+    setEqObs(eq.observacoes || '');
+    setEqLacreAnterior(eq.lacreAnterior || 'LAC-2024-0091');
+    setEqSeloAnterior(eq.seloAnterior || 'SELO-2024-881');
+    setEqLacreNovo(eq.lacreNovo || 'LAC-2026-4401');
+    setEqSeloNovo(eq.seloNovo || 'SELO-INM-88910');
+    setEqAnoFabricacao(eq.anoFabricacao || '2023');
+    setEqDataServicoAnterior(eq.dataServicoAnterior || '2025-02-15');
+    setEqDataCalibracao(eq.dataUltimaCalibracao);
+    setEqPortaria(eq.portariaInmetro || 'Portaria INMETRO/DIMEL Nº 0296/2013');
+    setEqTemEtiquetaAnterior(eq.temEtiquetaAnterior || 'Sim, etiqueta Elgin térmica preservada');
+    setEqAbaForm('identificacao');
+    setModalNovoEquipamento(true);
+  };
+
   const handleSalvarEquipamento = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!clienteSelecionado || !eqSerie) return;
+    if (!clienteSelecionado || !eqSerie) {
+      alert('Preencha ao menos o número de série do equipamento.');
+      return;
+    }
 
     await EquipamentosService.criar({
       clienteId: clienteSelecionado.id,
@@ -204,40 +335,45 @@ export const ClientesView: React.FC = () => {
       numeroSerie: eqSerie,
       fabricante: eqFabricante,
       modelo: eqModelo,
-      tipoEquipamento: 'Medidor de Umidade GEHAKA',
+      tipoEquipamento: eqModelo.includes('Balança') ? 'Balança de Precisão' : 'Medidor de Umidade GEHAKA',
       faixaMedicao: '8 a 50 %',
       resolucao: '0,1 %',
       patrimonio: eqPatrimonio,
+      lacreAnterior: eqLacreAnterior,
+      seloAnterior: eqSeloAnterior,
       lacreNovo: eqLacreNovo,
       seloNovo: eqSeloNovo,
-      dataUltimaCalibracao: new Date().toISOString().split('T')[0],
+      anoFabricacao: eqAnoFabricacao,
+      dataServicoAnterior: eqDataServicoAnterior,
+      dataUltimaCalibracao: eqDataCalibracao,
       dataProximaCalibracao: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-      status: 'Calibrado',
-      observacoes: 'Cadastrado diretamente pela ficha de cliente',
+      portariaInmetro: eqPortaria,
+      temEtiquetaAnterior: eqTemEtiquetaAnterior,
+      status: eqInativo ? 'Em Manutenção' : 'Calibrado',
+      observacoes: eqObs || 'Cadastrado diretamente pela ficha de cliente',
     });
 
     setModalNovoEquipamento(false);
-    setEqSerie('');
-    setEqPatrimonio('');
-    setEqLacreNovo('');
-    setEqSeloNovo('');
     carregarEquipamentos(clienteSelecionado.id);
   };
 
   // Se um cliente está aberto no formulário, exibe o Card Form fiel ao gemini-code-1788366369820.html
   if (clienteSelecionado) {
     return (
-      <div className="rarus-content-scroll">
+      <div className="rarus-content-scroll rarus-fullscreen-view">
         {/* Barra de Voltar */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
           <button
             className="btn btn-secondary"
-            onClick={() => setClienteSelecionado(null)}
+            onClick={handleFecharFormulario}
             type="button"
           >
             <ArrowLeft size={14} />
             <span>Voltar para Lista de Clientes</span>
           </button>
+          <span style={{ fontSize: '12px', color: 'var(--color-text-muted)' }}>
+            Visualização em Tela Cheia • Código {formCodigo}
+          </span>
         </div>
 
         {/* CONTAINER CARD FORMULÁRIO (PADRÃO ESPECIFICAÇÃO & GEMINI-CODE) */}
@@ -255,7 +391,7 @@ export const ClientesView: React.FC = () => {
 
           {/* Barra de Ações (Action Bar) */}
           <div className="action-bar">
-            <button className="btn btn-primary" onClick={handleAbrirNovo} type="button">
+            <button className="btn btn-primary" onClick={() => handleAbrirNovoCliente()} type="button">
               <Plus size={14} />
               <span>Novo</span>
             </button>
@@ -263,7 +399,7 @@ export const ClientesView: React.FC = () => {
               <Save size={14} />
               <span>Salvar</span>
             </button>
-            <button className="btn btn-secondary" onClick={() => setClienteSelecionado(null)} type="button">
+            <button className="btn btn-secondary" onClick={handleFecharFormulario} type="button">
               <Search size={14} />
               <span>Buscar</span>
             </button>
@@ -289,42 +425,42 @@ export const ClientesView: React.FC = () => {
           <div className="tabs-navigation">
             <button
               className={`tab-button ${abaForm === 'identificacao' ? 'active' : ''}`}
-              onClick={() => setAbaForm('identificacao')}
+              onClick={() => handleMudarAba('identificacao')}
               type="button"
             >
               1. Identificação
             </button>
             <button
               className={`tab-button ${abaForm === 'endereco' ? 'active' : ''}`}
-              onClick={() => setAbaForm('endereco')}
+              onClick={() => handleMudarAba('endereco')}
               type="button"
             >
               2. Endereço
             </button>
             <button
               className={`tab-button ${abaForm === 'observacoes' ? 'active' : ''}`}
-              onClick={() => setAbaForm('observacoes')}
+              onClick={() => handleMudarAba('observacoes')}
               type="button"
             >
               3. Observações
             </button>
             <button
               className={`tab-button ${abaForm === 'tributacao' ? 'active' : ''}`}
-              onClick={() => setAbaForm('tributacao')}
+              onClick={() => handleMudarAba('tributacao')}
               type="button"
             >
               4. Tributação
             </button>
             <button
               className={`tab-button ${abaForm === 'confidencial' ? 'active' : ''}`}
-              onClick={() => setAbaForm('confidencial')}
+              onClick={() => handleMudarAba('confidencial')}
               type="button"
             >
               5. Confidencial
             </button>
             <button
               className={`tab-button ${abaForm === 'equipamentos' ? 'active' : ''}`}
-              onClick={() => setAbaForm('equipamentos')}
+              onClick={() => handleMudarAba('equipamentos')}
               type="button"
             >
               6. Tabelas / Equipamentos ({equipamentosCliente.length})
@@ -672,51 +808,72 @@ export const ClientesView: React.FC = () => {
                   <button
                     type="button"
                     className="btn btn-primary"
-                    onClick={() => setModalNovoEquipamento(true)}
+                    onClick={handleAbrirNovoEquipamento}
                   >
                     <Plus size={14} />
-                    <span>+ Novo Equipamento</span>
+                    <span>Novo Equipamento</span>
                   </button>
                 </div>
 
-                <table className="rarus-table">
-                  <thead>
-                    <tr>
-                      <th>Modelo / Tipo</th>
-                      <th>Nº Série</th>
-                      <th>Patrimônio</th>
-                      <th>Lacre Novo</th>
-                      <th>Selo Inmetro</th>
-                      <th>Próxima Calibração</th>
-                      <th>Status</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {equipamentosCliente.map((eq) => (
-                      <tr key={eq.id}>
-                        <td>
-                          <strong>{eq.modelo}</strong>
-                          <div style={{ fontSize: '11px', color: 'var(--color-text-muted)' }}>
-                            {eq.fabricante} • {eq.tipoEquipamento}
-                          </div>
-                        </td>
-                        <td>
-                          <code>{eq.numeroSerie}</code>
-                        </td>
-                        <td>{eq.patrimonio || 'S/N'}</td>
-                        <td>{eq.lacreNovo || '-'}</td>
-                        <td>{eq.seloNovo || '-'}</td>
-                        <td style={{ fontWeight: 600 }}>{eq.dataProximaCalibracao}</td>
-                        <td>
-                          <span className={`status-badge ${eq.status === 'Calibrado' ? 'ativo' : 'inativo'}`}>
-                            <span className="rarus-status-dot" />
-                            {eq.status}
-                          </span>
-                        </td>
+                <div className="rarus-table-container">
+                  <table className="rarus-table">
+                    <thead>
+                      <tr>
+                        <th>Modelo / Tipo</th>
+                        <th>Nº Série</th>
+                        <th>Patrimônio</th>
+                        <th>Lacre Novo</th>
+                        <th>Selo Inmetro</th>
+                        <th>Próxima Calibração</th>
+                        <th>Status</th>
+                        <th>Ações</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
+                    </thead>
+                    <tbody>
+                      {equipamentosCliente.map((eq) => (
+                        <tr
+                          key={eq.id}
+                          style={{ cursor: 'pointer' }}
+                          onClick={() => handleEditarEquipamento(eq)}
+                          title="Clique para abrir e editar a ficha completa deste equipamento"
+                        >
+                          <td>
+                            <strong>{eq.modelo}</strong>
+                            <div style={{ fontSize: '11px', color: 'var(--color-text-muted)' }}>
+                              {eq.fabricante} • {eq.tipoEquipamento}
+                            </div>
+                          </td>
+                          <td>
+                            <code>{eq.numeroSerie}</code>
+                          </td>
+                          <td>{eq.patrimonio || 'S/N'}</td>
+                          <td>{eq.lacreNovo || '-'}</td>
+                          <td>{eq.seloNovo || '-'}</td>
+                          <td style={{ fontWeight: 600 }}>{eq.dataProximaCalibracao}</td>
+                          <td>
+                            <span className={`status-badge ${eq.status === 'Calibrado' ? 'ativo' : 'inativo'}`}>
+                              <span className="rarus-status-dot" />
+                              {eq.status}
+                            </span>
+                          </td>
+                          <td>
+                            <button
+                              type="button"
+                              className="btn btn-secondary"
+                              style={{ padding: '3px 8px', fontSize: '11.5px' }}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleEditarEquipamento(eq);
+                              }}
+                            >
+                              Ficha Técnica
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               </div>
             )}
           </div>
@@ -732,85 +889,290 @@ export const ClientesView: React.FC = () => {
           </div>
         </div>
 
-        {/* Modal Novo Equipamento */}
+        {/* Modal Equipamento Completo (Idêntico a EquipamentosView com 3 Abas) */}
         {modalNovoEquipamento && (
           <div className="rarus-modal-backdrop" onClick={() => setModalNovoEquipamento(false)}>
-            <div className="rarus-modal-box" onClick={(e) => e.stopPropagation()}>
+            <div
+              className="rarus-modal-box"
+              onClick={(e) => e.stopPropagation()}
+              style={{ maxWidth: '980px', width: '95vw', maxHeight: '92vh' }}
+            >
+              {/* Cabeçalho do Card */}
               <div className="card-header">
-                <h3 className="card-title">Novo Equipamento para {formRazaoSocial || 'Cliente'}</h3>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                  <h3 className="card-title" style={{ margin: 0 }}>
+                    Equipamento — {eqModelo} (Série: {eqSerie || 'Novo'})
+                  </h3>
+                  <span className={`status-badge ${eqInativo ? 'inativo' : 'ativo'}`}>
+                    <span className="rarus-status-dot" />
+                    {eqInativo ? 'Inativo' : 'Ativo / Calibrado'}
+                  </span>
+                </div>
+                <div style={{ fontSize: '12px', color: 'var(--color-text-muted)' }}>
+                  Identificador: <strong>{eqIdObjeto}</strong> • Cliente: <strong>{clienteSelecionado?.nomeFantasia || formRazaoSocial}</strong>
+                </div>
               </div>
-              <form onSubmit={handleSalvarEquipamento}>
-                <div className="card-body">
+
+              {/* Barra de Ações */}
+              <div className="action-bar">
+                <button type="button" className="btn btn-primary" onClick={handleSalvarEquipamento}>
+                  <Save size={14} />
+                  <span>Salvar Equipamento</span>
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  onClick={() => setModalNovoEquipamento(false)}
+                >
+                  <ArrowLeft size={14} />
+                  <span>Cancelar</span>
+                </button>
+                <button type="button" className="btn btn-secondary" onClick={() => window.print()}>
+                  <Printer size={14} />
+                  <span>Imprimir Ficha</span>
+                </button>
+              </div>
+
+              {/* Abas de Navegação */}
+              <div className="tabs-navigation">
+                <button
+                  type="button"
+                  className={`tab-button ${eqAbaForm === 'identificacao' ? 'active' : ''}`}
+                  onClick={() => setEqAbaForm('identificacao')}
+                >
+                  1. Identificação
+                </button>
+                <button
+                  type="button"
+                  className={`tab-button ${eqAbaForm === 'complementares' ? 'active' : ''}`}
+                  onClick={() => setEqAbaForm('complementares')}
+                >
+                  2. Campos Complementares (Lacres & Selos)
+                </button>
+                <button
+                  type="button"
+                  className={`tab-button ${eqAbaForm === 'historico' ? 'active' : ''}`}
+                  onClick={() => setEqAbaForm('historico')}
+                >
+                  3. Histórico de OS & Anotações
+                </button>
+              </div>
+
+              {/* Corpo do Formulário */}
+              <div className="card-body" style={{ overflowY: 'auto', maxHeight: 'calc(92vh - 200px)' }}>
+                {/* Aba 1: Identificação */}
+                {eqAbaForm === 'identificacao' && (
                   <div className="form-grid">
-                    <div className="form-group col-6">
-                      <label className="form-label">Modelo *</label>
+                    <div className="form-group col-2">
+                      <label className="form-label">Identificador</label>
+                      <input className="form-input" value={eqIdObjeto} readOnly />
+                    </div>
+                    <div className="form-group col-4">
+                      <label className="form-label">Série *</label>
                       <input
                         className="form-input"
-                        value={eqModelo}
-                        onChange={(e) => setEqModelo(e.target.value)}
+                        placeholder="Ex: GEH-2023-90812"
+                        value={eqSerie}
+                        onChange={(e) => setEqSerie(e.target.value)}
                         required
                       />
                     </div>
-                    <div className="form-group col-6">
-                      <label className="form-label">Fabricante</label>
+                    <div className="form-group col-3">
+                      <label className="form-label">Modelo *</label>
+                      <select
+                        className="form-select"
+                        value={eqModelo}
+                        onChange={(e) => setEqModelo(e.target.value)}
+                      >
+                        <option value="G650i">G650i (Medidor de Umidade de Grãos)</option>
+                        <option value="G810">G810 (Medidor de Umidade de Bancada)</option>
+                        <option value="BG1000">BG1000 (Balança de Umidade)</option>
+                        <option value="XPR205">XPR205 (Balança Analítica)</option>
+                      </select>
+                    </div>
+                    <div className="form-group col-3">
+                      <label className="form-label">Marca / Fabricante</label>
                       <input
                         className="form-input"
                         value={eqFabricante}
                         onChange={(e) => setEqFabricante(e.target.value)}
                       />
                     </div>
-                    <div className="form-group col-6">
-                      <label className="form-label">Número de Série *</label>
+
+                    <div className="form-group col-3">
+                      <label className="form-label">INMETRO / Selo Atual</label>
                       <input
                         className="form-input"
-                        placeholder="Ex: GEH-2026-9014"
-                        value={eqSerie}
-                        onChange={(e) => setEqSerie(e.target.value)}
-                        required
+                        value={eqInmetro}
+                        onChange={(e) => setEqInmetro(e.target.value)}
                       />
                     </div>
-                    <div className="form-group col-6">
-                      <label className="form-label">Patrimônio do Cliente</label>
+                    <div className="form-group col-3">
+                      <label className="form-label">Patrimônio</label>
                       <input
                         className="form-input"
-                        placeholder="Ex: PAT-001"
+                        placeholder="PAT-0012"
                         value={eqPatrimonio}
                         onChange={(e) => setEqPatrimonio(e.target.value)}
                       />
                     </div>
                     <div className="form-group col-6">
-                      <label className="form-label">Lacre Novo</label>
+                      <label className="form-label">Cliente Titular</label>
                       <input
                         className="form-input"
-                        placeholder="Ex: LAC-2026-10"
+                        value={`${formCodigo} - ${formRazaoSocial || clienteSelecionado?.nomeFantasia}`}
+                        readOnly
+                      />
+                    </div>
+
+                    <div className="form-group col-12">
+                      <div className="checkbox-group">
+                        <input
+                          type="checkbox"
+                          id="chk-eq-inativo-cli"
+                          checked={eqInativo}
+                          onChange={(e) => setEqInativo(e.target.checked)}
+                        />
+                        <label htmlFor="chk-eq-inativo-cli">
+                          Marcar este equipamento como <strong>Inativo / Em Manutenção</strong>
+                        </label>
+                      </div>
+                    </div>
+
+                    <div className="form-group col-12">
+                      <label className="form-label">Observações Técnicas do Instrumento</label>
+                      <textarea
+                        className="form-textarea"
+                        rows={3}
+                        value={eqObs}
+                        onChange={(e) => setEqObs(e.target.value)}
+                        placeholder="Detalhes sobre localização na planta, condições de operação ou histórico..."
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {/* Aba 2: Campos Complementares (Lacres & Selos) */}
+                {eqAbaForm === 'complementares' && (
+                  <div className="form-grid">
+                    <div className="form-section-title">Selagem & Lacração Metrológica</div>
+                    <div className="form-group col-3">
+                      <label className="form-label">Lacre Anterior</label>
+                      <input
+                        className="form-input"
+                        value={eqLacreAnterior}
+                        onChange={(e) => setEqLacreAnterior(e.target.value)}
+                      />
+                    </div>
+                    <div className="form-group col-3">
+                      <label className="form-label">Selo Anterior</label>
+                      <input
+                        className="form-input"
+                        value={eqSeloAnterior}
+                        onChange={(e) => setEqSeloAnterior(e.target.value)}
+                      />
+                    </div>
+                    <div className="form-group col-3">
+                      <label className="form-label">Lacre Novo (Atual)</label>
+                      <input
+                        className="form-input"
                         value={eqLacreNovo}
                         onChange={(e) => setEqLacreNovo(e.target.value)}
                       />
                     </div>
-                    <div className="form-group col-6">
-                      <label className="form-label">Selo Novo Inmetro</label>
+                    <div className="form-group col-3">
+                      <label className="form-label">Selo Novo INMETRO</label>
                       <input
                         className="form-input"
-                        placeholder="Ex: SELO-INM-902"
                         value={eqSeloNovo}
                         onChange={(e) => setEqSeloNovo(e.target.value)}
                       />
                     </div>
+
+                    <div className="form-section-title">Dados Regulatórios & Datas Metrológicas</div>
+                    <div className="form-group col-3">
+                      <label className="form-label">Ano de Fabricação</label>
+                      <input
+                        className="form-input"
+                        value={eqAnoFabricacao}
+                        onChange={(e) => setEqAnoFabricacao(e.target.value)}
+                      />
+                    </div>
+                    <div className="form-group col-3">
+                      <label className="form-label">Data do Serviço Anterior</label>
+                      <input
+                        type="date"
+                        className="form-input"
+                        value={eqDataServicoAnterior}
+                        onChange={(e) => setEqDataServicoAnterior(e.target.value)}
+                      />
+                    </div>
+                    <div className="form-group col-3">
+                      <label className="form-label">Data da Calibração</label>
+                      <input
+                        type="date"
+                        className="form-input"
+                        value={eqDataCalibracao}
+                        onChange={(e) => setEqDataCalibracao(e.target.value)}
+                      />
+                    </div>
+                    <div className="form-group col-6">
+                      <label className="form-label">Portaria INMETRO / DIMEL</label>
+                      <input
+                        className="form-input"
+                        value={eqPortaria}
+                        onChange={(e) => setEqPortaria(e.target.value)}
+                      />
+                    </div>
+                    <div className="form-group col-6">
+                      <label className="form-label">Possui Etiqueta Elgin Anterior?</label>
+                      <input
+                        className="form-input"
+                        value={eqTemEtiquetaAnterior}
+                        onChange={(e) => setEqTemEtiquetaAnterior(e.target.value)}
+                      />
+                    </div>
                   </div>
-                </div>
-                <div className="action-bar" style={{ justifyContent: 'flex-end' }}>
-                  <button
-                    type="button"
-                    className="btn btn-secondary"
-                    onClick={() => setModalNovoEquipamento(false)}
-                  >
-                    Cancelar
-                  </button>
-                  <button type="submit" className="btn btn-primary">
-                    Salvar Equipamento
-                  </button>
-                </div>
-              </form>
+                )}
+
+                {/* Aba 3: Histórico de OS */}
+                {eqAbaForm === 'historico' && (
+                  <div>
+                    <div style={{ marginBottom: 12, fontSize: '13px', fontWeight: 600 }}>
+                      Ordens de Serviço e Manutenções no Equipamento
+                    </div>
+                    <div className="rarus-table-container">
+                      <table className="rarus-table">
+                        <thead>
+                          <tr>
+                            <th>Nº Movimento (OS)</th>
+                            <th>Data</th>
+                            <th>Técnico</th>
+                            <th>Tipo de Serviço</th>
+                            <th>Status</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          <tr>
+                            <td><strong style={{ color: 'var(--color-primary-500)' }}>OS #0001045</strong></td>
+                            <td>19/08/2026</td>
+                            <td>Caio Detz</td>
+                            <td>Calibração em Campo - Padrão RBC</td>
+                            <td><span className="status-badge ativo"><span className="rarus-status-dot" />Concluída</span></td>
+                          </tr>
+                          <tr>
+                            <td><strong style={{ color: 'var(--color-primary-500)' }}>OS #0001012</strong></td>
+                            <td>14/02/2025</td>
+                            <td>Itamar Soares</td>
+                            <td>Manutenção Preventiva e Troca de Lacre</td>
+                            <td><span className="status-badge ativo"><span className="rarus-status-dot" />Concluída</span></td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         )}
@@ -827,7 +1189,7 @@ export const ClientesView: React.FC = () => {
           <h1>Clientes & Plantas Industriais</h1>
           <p>Gestão comercial, parque de equipamentos vinculados e rastreabilidade de serviços</p>
         </div>
-        <button className="btn btn-primary" onClick={handleAbrirNovo} type="button">
+        <button className="btn btn-primary" onClick={() => handleAbrirNovoCliente()} type="button">
           <Plus size={15} />
           <span>Novo Cliente</span>
         </button>
@@ -885,21 +1247,30 @@ export const ClientesView: React.FC = () => {
         <div className="rarus-grid-header-tabs">
           <button
             className={`rarus-filter-tab-pill ${segmentoFiltro === 'todos' ? 'active' : ''}`}
-            onClick={() => setSegmentoFiltro('todos')}
+            onClick={() => {
+              setSegmentoFiltro('todos');
+              updateUrlParams({ segmento: null });
+            }}
           >
             <span>Todos os Clientes</span>
             <span className="count">{clientes.length}</span>
           </button>
           <button
             className={`rarus-filter-tab-pill ${segmentoFiltro === 'grãos' ? 'active' : ''}`}
-            onClick={() => setSegmentoFiltro('grãos')}
+            onClick={() => {
+              setSegmentoFiltro('grãos');
+              updateUrlParams({ segmento: 'grãos' });
+            }}
           >
             <span>Agronegócio / Grãos</span>
             <span className="count">2</span>
           </button>
           <button
             className={`rarus-filter-tab-pill ${segmentoFiltro === 'farma' ? 'active' : ''}`}
-            onClick={() => setSegmentoFiltro('farma')}
+            onClick={() => {
+              setSegmentoFiltro('farma');
+              updateUrlParams({ segmento: 'farma' });
+            }}
           >
             <span>Farmacêutico / Lab</span>
             <span className="count">1</span>
@@ -912,90 +1283,101 @@ export const ClientesView: React.FC = () => {
             <input
               placeholder="Buscar por razão social, nome fantasia, CNPJ..."
               value={busca}
-              onChange={(e) => setBusca(e.target.value)}
+              onChange={(e) => {
+                const val = e.target.value;
+                setBusca(val);
+                updateUrlParams({ busca: val || null });
+              }}
             />
           </div>
         </div>
 
-        <table className="rarus-table">
-          <thead>
-            <tr>
-              <th>Código</th>
-              <th>Razão Social / Nome Fantasia</th>
-              <th>CNPJ</th>
-              <th>Segmento</th>
-              <th>Cidade / UF</th>
-              <th>Contato Técnico</th>
-              <th>Status</th>
-              <th>Ações</th>
-            </tr>
-          </thead>
-          <tbody>
-            {clientes.map((c) => (
-              <tr
-                key={c.id}
-                style={{ cursor: 'pointer' }}
-                onClick={() => setClienteSelecionado(c)}
-              >
-                <td>
-                  <span style={{ fontFamily: 'monospace', fontWeight: 600, color: 'var(--color-primary-500)' }}>
-                    {c.codigo || 'C03709'}
-                  </span>
-                </td>
-                <td>
-                  <div style={{ fontWeight: 600, color: 'var(--color-text-main)' }}>
-                    {c.nomeFantasia}
-                  </div>
-                  <div style={{ fontSize: '11.5px', color: 'var(--color-text-muted)' }}>
-                    {c.razaoSocial}
-                  </div>
-                </td>
-                <td>
-                  <span style={{ fontFamily: 'monospace', fontSize: '12px' }}>{c.cnpj}</span>
-                </td>
-                <td>
-                  <span
-                    style={{
-                      fontSize: '11.5px',
-                      fontWeight: 600,
-                      color: 'var(--color-primary-500)',
-                      background: 'var(--color-primary-100)',
-                      padding: '2px 8px',
-                      borderRadius: 4,
-                    }}
-                  >
-                    {c.segmento}
-                  </span>
-                </td>
-                <td>
-                  {c.cidade} / {c.estado}
-                </td>
-                <td>
-                  <div style={{ fontWeight: 500 }}>{c.contatoResponsavel}</div>
-                  <div style={{ fontSize: '11px', color: 'var(--color-text-muted)' }}>{c.telefone}</div>
-                </td>
-                <td>
-                  <span className={`status-badge ${c.status === 'Ativo' ? 'ativo' : 'inativo'}`}>
-                    <span className="rarus-status-dot" />
-                    {c.status}
-                  </span>
-                </td>
-                <td>
-                  <button
-                    className="btn btn-secondary"
-                    style={{ padding: '4px 10px', fontSize: '12px' }}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setClienteSelecionado(c);
-                    }}
-                  >
-                    Abrir Ficha
-                  </button>
-                </td>
+        <div className="rarus-table-container">
+          <table className="rarus-table">
+            <thead>
+              <tr>
+                <th>Código</th>
+                <th>Razão Social / Nome Fantasia</th>
+                <th>CNPJ</th>
+                <th>Segmento</th>
+                <th>Cidade / UF</th>
+                <th>Contato Técnico</th>
+                <th>Status</th>
+                <th>Ações</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {clientes.map((c) => {
+                const isSelected = selectedRowId === c.id;
+                return (
+                  <tr
+                    key={c.id}
+                    className={isSelected ? 'rarus-row-selected' : ''}
+                    onClick={() => handleRowClick(c)}
+                    title={isSelected ? 'Clique novamente para abrir a ficha do cliente em tela cheia' : 'Clique para selecionar o cliente'}
+                  >
+                    <td>
+                      <span style={{ fontFamily: 'monospace', fontWeight: 600, color: 'var(--color-primary-500)' }}>
+                        {c.codigo || 'C03709'}
+                      </span>
+                    </td>
+                    <td>
+                      <div style={{ fontWeight: 600, color: 'var(--color-text-main)' }}>
+                        {c.nomeFantasia}
+                      </div>
+                      <div style={{ fontSize: '11.5px', color: 'var(--color-text-muted)' }}>
+                        {c.razaoSocial}
+                      </div>
+                    </td>
+                    <td>
+                      <span style={{ fontFamily: 'monospace', fontSize: '12px' }}>{c.cnpj}</span>
+                    </td>
+                    <td>
+                      <span
+                        style={{
+                          fontSize: '11.5px',
+                          fontWeight: 600,
+                          color: 'var(--color-primary-500)',
+                          background: 'var(--color-primary-100)',
+                          padding: '2px 8px',
+                          borderRadius: 4,
+                        }}
+                      >
+                        {c.segmento}
+                      </span>
+                    </td>
+                    <td>
+                      {c.cidade} / {c.estado}
+                    </td>
+                    <td>
+                      <div style={{ fontWeight: 500 }}>{c.contatoResponsavel}</div>
+                      <div style={{ fontSize: '11px', color: 'var(--color-text-muted)' }}>{c.telefone}</div>
+                    </td>
+                    <td>
+                      <span className={`status-badge ${c.status === 'Ativo' ? 'ativo' : 'inativo'}`}>
+                        <span className="rarus-status-dot" />
+                        {c.status}
+                      </span>
+                    </td>
+                    <td>
+                      <button
+                        className="btn btn-secondary"
+                        style={{ padding: '4px 10px', fontSize: '12px' }}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          selecionarCliente(c);
+                        }}
+                        type="button"
+                      >
+                        Abrir Ficha
+                      </button>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );

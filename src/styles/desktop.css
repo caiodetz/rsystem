@@ -596,6 +596,9 @@ button.rarus-nav-item.active,
 
 .rarus-grid-header-tabs {
   display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  min-height: 48px;
   border-bottom: 1px solid var(--color-border-subtle);
   padding: 0 16px;
   gap: 16px;
@@ -654,6 +657,56 @@ button.rarus-nav-item.active,
   flex-wrap: wrap;
 }
 
+.rarus-filter-toolbar {
+  padding: 14px 18px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  border-bottom: 1px solid var(--color-border-subtle);
+  background-color: var(--color-bg-surface);
+  flex-wrap: wrap;
+}
+
+.rarus-search-box {
+  position: relative;
+  display: flex;
+  align-items: center;
+  flex: 1;
+  max-width: 520px;
+  min-width: 280px;
+}
+
+.rarus-search-box svg {
+  position: absolute;
+  left: 12px;
+  color: var(--color-text-muted);
+  pointer-events: none;
+}
+
+.rarus-search-box input {
+  width: 100%;
+  height: 38px;
+  padding: 8px 12px 8px 36px;
+  font-size: 13.5px;
+  border: 1px solid var(--color-border-input);
+  border-radius: var(--radius-md);
+  background-color: var(--color-bg-surface);
+  color: var(--color-text-main);
+  outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.rarus-search-box input:focus {
+  border-color: var(--color-primary-500);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+}
+
+.rarus-search-panel {
+  flex-shrink: 0 !important;
+  width: 100%;
+}
+
 .rarus-inline-search {
   display: flex;
   align-items: center;
@@ -678,13 +731,38 @@ button.rarus-nav-item.active,
 .table-responsive,
 .rarus-table-container {
   width: 100%;
-  overflow-x: auto;
+  overflow-x: auto !important;
+  overflow-y: hidden;
   -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+  scrollbar-color: #CBD5E1 #F1F5F9;
+}
+
+.table-responsive::-webkit-scrollbar,
+.rarus-table-container::-webkit-scrollbar {
+  height: 6px;
+}
+
+.table-responsive::-webkit-scrollbar-track,
+.rarus-table-container::-webkit-scrollbar-track {
+  background: #F1F5F9;
+  border-radius: 4px;
+}
+
+.table-responsive::-webkit-scrollbar-thumb,
+.rarus-table-container::-webkit-scrollbar-thumb {
+  background: #CBD5E1;
+  border-radius: 4px;
+}
+
+.table-responsive::-webkit-scrollbar-thumb:hover,
+.rarus-table-container::-webkit-scrollbar-thumb:hover {
+  background: #94A3B8;
 }
 
 .rarus-table {
   width: 100%;
-  min-width: 720px;
+  min-width: 780px;
   border-collapse: collapse;
   text-align: left;
 }
@@ -709,8 +787,64 @@ button.rarus-nav-item.active,
   vertical-align: middle;
 }
 
-.rarus-table tbody tr:hover {
+.rarus-table tbody tr {
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+  user-select: none;
+}
+
+.rarus-table tbody tr:hover:not(.rarus-row-selected) {
   background-color: #F8FAFC;
+}
+
+.rarus-table tbody tr.rarus-row-selected {
+  background-color: #EFF6FF !important;
+  box-shadow: inset 4px 0 0 #2563EB;
+}
+
+.rarus-table tbody tr.rarus-row-selected td {
+  color: #0F172A !important;
+  font-weight: 500;
+}
+
+/* ==========================================================================
+   VIEWPORT TELA CHEIA (FULL-SCREEN PREVIEW / FICHA COMPLETA)
+   ========================================================================== */
+.rarus-fullscreen-view {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  width: 100%;
+  gap: 12px;
+  animation: rarusFadeIn 0.15s ease-in-out;
+}
+
+.rarus-fullscreen-view .card-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+  height: 100%;
+  overflow: hidden;
+}
+
+.rarus-fullscreen-view .card-body {
+  flex: 1;
+  max-height: none !important;
+  overflow-y: auto;
+  padding: 24px;
+}
+
+@keyframes rarusFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(3px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 /* Status Badges */
@@ -1145,3 +1279,92 @@ button.rarus-nav-item.active,
     align-items: flex-start;
   }
 }
+
+/* ==========================================================================
+   EDITOR DE TEMPLATES HTML & SPLIT PANE (FIX LAYOUT)
+   ========================================================================== */
+.rarus-split-editor {
+  display: grid;
+  grid-template-columns: 1fr 1.15fr;
+  gap: 20px;
+  min-height: 640px;
+  align-items: stretch;
+}
+
+@media (max-width: 1200px) {
+  .rarus-split-editor {
+    grid-template-columns: 1fr;
+  }
+}
+
+.rarus-code-pane {
+  display: flex;
+  flex-direction: column;
+  background-color: var(--color-bg-surface);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+  padding: 16px 20px;
+  gap: 12px;
+}
+
+.rarus-code-textarea {
+  flex: 1;
+  min-height: 520px;
+  width: 100%;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  font-size: 12.5px;
+  line-height: 1.6;
+  color: #0F172A;
+  background-color: #F8FAFC;
+  border: 1px solid var(--color-border-input);
+  border-radius: var(--radius-sm);
+  padding: 14px 16px;
+  resize: vertical;
+  outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.rarus-code-textarea:focus {
+  border-color: var(--color-primary-500) !important;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15) !important;
+  background-color: #FFFFFF;
+}
+
+.rarus-preview-pane {
+  background-color: #FFFFFF;
+  border: 1px solid var(--color-border-subtle);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+  padding: 24px;
+  overflow-y: auto;
+  max-height: 750px;
+}
+
+/* Customização Swagger UI para integrar com o Design System RARUS */
+.swagger-container .swagger-ui {
+  font-family: inherit !important;
+}
+
+.swagger-container .swagger-ui .wrapper {
+  max-width: 100% !important;
+  padding: 0 !important;
+}
+
+.swagger-container .swagger-ui .information-container {
+  padding: 12px 0 20px 0 !important;
+}
+
+.swagger-container .swagger-ui .info .title {
+  color: var(--color-text-main) !important;
+  font-size: 26px !important;
+  font-weight: 700 !important;
+}
+
+.swagger-container .swagger-ui .opblock {
+  border-radius: var(--radius-md) !important;
+  box-shadow: none !important;
+  margin: 0 0 12px 0 !important;
+}
+
+
