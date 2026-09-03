@@ -69,32 +69,21 @@ export const DashboardView: React.FC = () => {
 
       {/* BANNER DE ALERTA SE HOUVER PADRÃO BASAL CRÍTICO OU BLOQUEADO */}
       {padraoCritico && (
-        <div
-          style={{
-            backgroundColor: 'var(--status-danger-bg)',
-            border: '1px solid var(--status-danger-text)',
-            borderRadius: 'var(--radius-lg)',
-            padding: '16px 20px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            gap: 16,
-          }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-            <ShieldAlert size={28} color="var(--status-danger-text)" />
+        <div className="rarus-alert-banner">
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <ShieldAlert size={22} color="var(--status-danger-text)" style={{ flexShrink: 0 }} />
             <div>
-              <div style={{ fontWeight: 800, fontSize: '14.5px', color: 'var(--status-danger-text)' }}>
+              <div style={{ fontWeight: 800, fontSize: '13px', color: 'var(--status-danger-text)' }}>
                 AVISO DE BLOQUEIO METROLÓGICO: PADRÃO BASAL [{padraoCritico.codigoIdentificador}]
               </div>
-              <div style={{ fontSize: '12.5px', color: 'var(--status-danger-text)', marginTop: 2 }}>
+              <div style={{ fontSize: '11.5px', color: 'var(--status-danger-text)', marginTop: 1 }}>
                 {padraoCritico.calc.mensagemAlerta}
               </div>
             </div>
           </div>
           <button
             className="btn btn-primary"
-            style={{ backgroundColor: 'var(--status-danger-text)', whiteSpace: 'nowrap' }}
+            style={{ backgroundColor: 'var(--status-danger-text)', whiteSpace: 'nowrap', fontSize: '11.5px' }}
             onClick={() =>
               openTab({
                 id: 'tab-padroes',
@@ -106,7 +95,7 @@ export const DashboardView: React.FC = () => {
             type="button"
           >
             <span>Ver Padrões Basais</span>
-            <ChevronRight size={14} />
+            <ChevronRight size={13} />
           </button>
         </div>
       )}
@@ -117,7 +106,7 @@ export const DashboardView: React.FC = () => {
           <div className="rarus-kpi-top">
             <span className="rarus-kpi-label">Ordens de Serviço Ativas</span>
             <div className="rarus-kpi-icon-box">
-              <Wrench size={18} />
+              <Wrench size={16} />
             </div>
           </div>
           <div className="rarus-kpi-value">{osAbertas}</div>
@@ -128,7 +117,7 @@ export const DashboardView: React.FC = () => {
           <div className="rarus-kpi-top">
             <span className="rarus-kpi-label">Equipamentos no Parque</span>
             <div className="rarus-kpi-icon-box">
-              <Activity size={18} />
+              <Activity size={16} />
             </div>
           </div>
           <div className="rarus-kpi-value">{totalEquipamentos}</div>
@@ -141,7 +130,7 @@ export const DashboardView: React.FC = () => {
           <div className="rarus-kpi-top">
             <span className="rarus-kpi-label">Clientes Industriais / Agro</span>
             <div className="rarus-kpi-icon-box">
-              <Users size={18} />
+              <Users size={16} />
             </div>
           </div>
           <div className="rarus-kpi-value">{MOCK_CLIENTES.length}</div>
@@ -152,37 +141,28 @@ export const DashboardView: React.FC = () => {
           <div className="rarus-kpi-top">
             <span className="rarus-kpi-label">Itens no Catálogo de Peças</span>
             <div className="rarus-kpi-icon-box">
-              <Boxes size={18} />
+              <Boxes size={16} />
             </div>
           </div>
           <div className="rarus-kpi-value">{MOCK_ITENS_ESTOQUE.length}</div>
-          <span className="rarus-kpi-trend trend-up">Estoque Central & Móvel dos Técnicos</span>
+          <span className="rarus-kpi-trend trend-up">Estoque Central & Móvel</span>
         </div>
       </div>
 
       {/* Tabela de Ordens de Serviço Expandida para 100% da Largura Inferior */}
       <div className="rarus-datagrid-container">
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            padding: '16px 20px',
-            borderBottom: '1px solid var(--color-border-subtle)',
-            backgroundColor: 'var(--color-bg-surface)',
-          }}
-        >
+        <div className="rarus-datagrid-header">
           <div>
-            <h3 style={{ margin: 0, fontSize: '16px', fontWeight: 600, color: 'var(--color-text-main)' }}>
+            <h3 style={{ margin: 0, fontSize: '14px', fontWeight: 600, color: 'var(--color-text-main)' }}>
               Ordens de Serviço em Andamento
             </h3>
-            <span style={{ fontSize: '12px', color: 'var(--color-text-muted)' }}>
+            <span style={{ fontSize: '11.5px', color: 'var(--color-text-muted)' }}>
               {selectedRowId ? 'Clique novamente na linha selecionada para abrir a OS' : 'Selecione uma linha para visualizar ou clique em "Ver Todas as OS"'}
             </span>
           </div>
           <button
             className="btn btn-secondary"
-            style={{ fontSize: '12px', padding: '6px 12px' }}
+            style={{ fontSize: '11.5px' }}
             onClick={() =>
               openTab({
                 id: 'tab-ordens-servico',

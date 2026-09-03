@@ -120,7 +120,7 @@ export function DesktopSidebar({
       {/* Navegação Agrupada */}
       <nav className="rarus-sidebar-nav">
         {navGroups.map((group) => (
-          <div key={group.group} style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+          <div key={group.group} className="rarus-nav-group">
             {!collapsed && <div className="rarus-nav-group-title">{group.group}</div>}
             {group.items.map((item) => {
               const Icon = item.icon;
@@ -133,7 +133,7 @@ export function DesktopSidebar({
                   onClick={() => onSelectModule(item.id)}
                   title={collapsed ? item.label : undefined}
                 >
-                  <Icon size={18} style={{ flexShrink: 0 }} />
+                  <Icon size={16} style={{ flexShrink: 0 }} />
                   {!collapsed && (
                     <>
                       <span>{item.label}</span>

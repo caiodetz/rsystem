@@ -41,6 +41,31 @@
   --shadow-card: 0 1px 3px 0 rgba(0, 0, 0, 0.05), 0 1px 2px 0 rgba(0, 0, 0, 0.03);
   --shadow-modal: 0 20px 25px -5px rgba(0, 0, 0, 0.08), 0 10px 10px -5px rgba(0, 0, 0, 0.03);
 
+  /* 2.4 Tokens de Dimensões e Densidade de Layout Responsivo */
+  --sidebar-width: 255px;
+  --sidebar-header-height: 56px;
+  --topbar-height: 52px;
+  --content-padding: 20px 24px;
+  --content-gap: 16px;
+  --nav-item-padding: 7px 12px;
+  --nav-item-font-size: 13px;
+  --nav-group-gap: 10px;
+  --nav-item-gap: 2px;
+  --kpi-padding: 16px 18px;
+  --kpi-value-size: 26px;
+  --kpi-label-size: 12.5px;
+  --kpi-icon-size: 34px;
+  --table-cell-padding-y: 9px;
+  --table-cell-padding-x: 12px;
+  --table-font-size: 12.5px;
+  --table-header-font-size: 11px;
+  --form-input-height: 35px;
+  --form-input-padding: 6px 11px;
+  --form-label-font-size: 12px;
+  --btn-height: 33px;
+  --btn-padding: 0 13px;
+  --btn-font-size: 12.5px;
+
   /* Variáveis de Compatibilidade */
   --rarus-navy: #0F172A;
   --rarus-cyan: #2563EB;
@@ -50,6 +75,66 @@
   --border-subtle: var(--color-border-subtle);
   --text-main: var(--color-text-main);
   --text-muted: var(--color-text-muted);
+}
+
+/* ==========================================================================
+   DENSIDADE COMPACTA PARA LAPTOPS E RESOLUÇÕES MENORES (1366x768, 1280x720,
+   ou monitores 1080p com escala Windows de 125%/150%)
+   ========================================================================== */
+@media (max-width: 1440px), (max-height: 860px) {
+  :root {
+    --sidebar-width: 215px;
+    --sidebar-header-height: 48px;
+    --topbar-height: 46px;
+    --content-padding: 14px 16px;
+    --content-gap: 10px;
+    --nav-item-padding: 5px 9px;
+    --nav-item-font-size: 12px;
+    --nav-group-gap: 6px;
+    --nav-item-gap: 1px;
+    --kpi-padding: 10px 14px;
+    --kpi-value-size: 20px;
+    --kpi-label-size: 11.5px;
+    --kpi-icon-size: 28px;
+    --table-cell-padding-y: 6px;
+    --table-cell-padding-x: 9px;
+    --table-font-size: 12px;
+    --table-header-font-size: 10.5px;
+    --form-input-height: 32px;
+    --form-input-padding: 5px 9px;
+    --form-label-font-size: 11.5px;
+    --btn-height: 30px;
+    --btn-padding: 0 10px;
+    --btn-font-size: 12px;
+  }
+}
+
+@media (max-width: 1200px), (max-height: 720px) {
+  :root {
+    --sidebar-width: 200px;
+    --sidebar-header-height: 44px;
+    --topbar-height: 42px;
+    --content-padding: 10px 12px;
+    --content-gap: 8px;
+    --nav-item-padding: 4px 8px;
+    --nav-item-font-size: 11.5px;
+    --nav-group-gap: 4px;
+    --nav-item-gap: 1px;
+    --kpi-padding: 8px 12px;
+    --kpi-value-size: 18px;
+    --kpi-label-size: 11px;
+    --kpi-icon-size: 26px;
+    --table-cell-padding-y: 5px;
+    --table-cell-padding-x: 7px;
+    --table-font-size: 11.5px;
+    --table-header-font-size: 10px;
+    --form-input-height: 30px;
+    --form-input-padding: 4px 8px;
+    --form-label-font-size: 11px;
+    --btn-height: 28px;
+    --btn-padding: 0 8px;
+    --btn-font-size: 11.5px;
+  }
 }
 
 [data-theme="dark"] {
@@ -141,25 +226,25 @@
   flex: 1;
   overflow-y: auto;
   overflow-x: hidden;
-  padding: 24px;
+  padding: var(--content-padding);
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: var(--content-gap);
 }
 
 @media (max-width: 768px) {
   .rarus-content-scroll {
-    padding: 16px 12px;
-    gap: 16px;
+    padding: 12px 10px;
+    gap: 12px;
   }
 }
 
 /* ==========================================================================
-   BARRA LATERAL (SIDEBAR) - CORREÇÃO DE CONTRASTE TOTAL
+   BARRA LATERAL (SIDEBAR) - COMPACTA, ELEGANTE E FLUIDA
    ========================================================================== */
 .rarus-sidebar {
-  width: 260px;
-  min-width: 260px;
+  width: var(--sidebar-width);
+  min-width: var(--sidebar-width);
   background-color: var(--color-bg-surface);
   border-right: 1px solid var(--color-border-subtle);
   display: flex;
@@ -171,21 +256,21 @@
 }
 
 .rarus-sidebar.collapsed {
-  width: 72px;
-  min-width: 72px;
+  width: 64px;
+  min-width: 64px;
 }
 
 .rarus-sidebar-header {
-  padding: 16px 18px;
+  padding: 8px 12px;
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 8px;
   border-bottom: 1px solid var(--color-border-subtle);
-  height: 60px;
+  height: var(--sidebar-header-height);
 }
 
 .rarus-logo-img {
-  height: 32px;
+  height: 26px;
   width: auto;
   object-fit: contain;
 }
@@ -196,31 +281,31 @@
 }
 
 .rarus-brand-name {
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 700;
   color: var(--color-text-main);
   letter-spacing: -0.2px;
 }
 
 .rarus-brand-tagline {
-  font-size: 10px;
+  font-size: 9px;
   color: var(--color-text-muted);
   text-transform: uppercase;
-  letter-spacing: 0.6px;
+  letter-spacing: 0.5px;
   font-weight: 600;
 }
 
 /* Seletor de Unidade com Alto Contraste */
 .rarus-unidade-selector {
-  margin: 12px 12px 4px 12px;
+  margin: 6px 8px 2px 8px;
   background-color: var(--color-primary-50);
   border: 1px solid var(--color-border-subtle);
   border-radius: var(--radius-sm);
-  padding: 8px 12px;
+  padding: 5px 8px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  font-size: 12px;
+  font-size: 11.5px;
   font-weight: 600;
   color: var(--color-text-main);
   cursor: pointer;
@@ -235,19 +320,25 @@
   flex: 1;
   overflow-y: auto;
   overflow-x: hidden;
-  padding: 14px 10px;
+  padding: 8px 8px;
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: var(--nav-group-gap);
+}
+
+.rarus-nav-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--nav-item-gap);
 }
 
 .rarus-nav-group-title {
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 700;
   color: var(--color-text-muted);
   text-transform: uppercase;
-  letter-spacing: 0.6px;
-  padding: 0 10px 4px 10px;
+  letter-spacing: 0.5px;
+  padding: 2px 8px 2px 8px;
 }
 
 /* Itens da Navegação - Reset Completo e Alto Contraste */
@@ -255,10 +346,10 @@ button.rarus-nav-item,
 .rarus-nav-item {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 9px 12px;
-  border-radius: var(--radius-md);
-  font-size: 13.5px;
+  gap: 8px;
+  padding: var(--nav-item-padding);
+  border-radius: var(--radius-sm);
+  font-size: var(--nav-item-font-size);
   font-weight: 500;
   color: var(--color-text-muted) !important;
   background: transparent !important;
@@ -288,8 +379,8 @@ button.rarus-nav-item.active,
 
 .rarus-nav-item .badge {
   margin-left: auto;
-  font-size: 11px;
-  padding: 2px 8px;
+  font-size: 10.5px;
+  padding: 1px 6px;
   border-radius: var(--radius-full);
   background-color: var(--status-neutral-bg);
   color: var(--status-neutral-text);
@@ -302,7 +393,7 @@ button.rarus-nav-item.active,
 }
 
 .rarus-sidebar-footer {
-  padding: 14px 16px;
+  padding: 8px 10px;
   border-top: 1px solid var(--color-border-subtle);
   background: var(--color-bg-surface);
 }
@@ -310,21 +401,21 @@ button.rarus-nav-item.active,
 .rarus-sla-card {
   background-color: var(--color-primary-50);
   border: 1px solid var(--color-border-subtle);
-  border-radius: var(--radius-md);
-  padding: 10px 12px;
+  border-radius: var(--radius-sm);
+  padding: 6px 10px;
 }
 
 .rarus-sla-header {
   display: flex;
   justify-content: space-between;
-  font-size: 11.5px;
+  font-size: 11px;
   font-weight: 600;
   color: var(--color-text-main);
-  margin-bottom: 6px;
+  margin-bottom: 4px;
 }
 
 .rarus-progress-bar {
-  height: 6px;
+  height: 5px;
   background-color: var(--color-border-subtle);
   border-radius: 3px;
   overflow: hidden;
@@ -340,30 +431,30 @@ button.rarus-nav-item.active,
    TOPBAR & ABAS MDI
    ========================================================================== */
 .rarus-topbar {
-  height: 56px;
-  min-height: 56px;
+  height: var(--topbar-height);
+  min-height: var(--topbar-height);
   background-color: var(--color-bg-surface);
   border-bottom: 1px solid var(--color-border-subtle);
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 20px;
-  gap: 14px;
+  padding: 0 16px;
+  gap: 12px;
   z-index: 30;
 }
 
 .rarus-search-trigger {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   background-color: var(--color-bg-app);
   border: 1px solid var(--color-border-input);
   border-radius: var(--radius-md);
-  padding: 7px 14px;
-  width: 360px;
+  padding: 5px 12px;
+  width: 320px;
   max-width: 100%;
   color: var(--color-text-muted);
-  font-size: 13px;
+  font-size: 12px;
   cursor: pointer;
   transition: all 0.15s ease;
 }
@@ -375,11 +466,11 @@ button.rarus-nav-item.active,
 
 .rarus-search-shortcut {
   margin-left: auto;
-  font-size: 11px;
+  font-size: 10.5px;
   background-color: var(--color-bg-surface);
   border: 1px solid var(--color-border-subtle);
   border-radius: 4px;
-  padding: 1px 6px;
+  padding: 1px 5px;
   font-family: monospace;
   font-weight: 600;
   color: var(--color-text-muted);
@@ -388,7 +479,7 @@ button.rarus-nav-item.active,
 .rarus-topbar-actions {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   flex-shrink: 0;
 }
 
@@ -396,8 +487,8 @@ button.rarus-nav-item.active,
   position: absolute;
   top: 4px;
   right: 4px;
-  width: 8px;
-  height: 8px;
+  width: 7px;
+  height: 7px;
   background-color: var(--status-danger-text);
   border-radius: 50%;
   border: 2px solid #FFFFFF;
@@ -406,21 +497,21 @@ button.rarus-nav-item.active,
 .rarus-user-profile-badge {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding-left: 12px;
+  gap: 8px;
+  padding-left: 10px;
   border-left: 1px solid var(--color-border-subtle);
 }
 
 .rarus-avatar-circle {
-  width: 32px;
-  height: 32px;
+  width: 28px;
+  height: 28px;
   border-radius: 50%;
   background: var(--color-primary-500);
   color: #FFFFFF;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 700;
   flex-shrink: 0;
 }
@@ -431,13 +522,14 @@ button.rarus-nav-item.active,
 }
 
 .rarus-user-name {
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 600;
   color: var(--color-text-main);
+  line-height: 1.2;
 }
 
 .rarus-user-role {
-  font-size: 11px;
+  font-size: 10px;
   color: var(--color-text-muted);
 }
 
@@ -447,12 +539,13 @@ button.rarus-nav-item.active,
   align-items: flex-end;
   background-color: var(--color-bg-surface);
   border-bottom: 1px solid var(--color-border-subtle);
-  padding: 6px 16px 0 16px;
+  padding: 4px 16px 0 16px;
   gap: 4px;
   overflow-x: auto;
   user-select: none;
   scrollbar-width: none;
   -ms-overflow-style: none;
+  min-height: 34px;
 }
 
 .rarus-tabs-container::-webkit-scrollbar {
@@ -462,9 +555,9 @@ button.rarus-nav-item.active,
 .rarus-tab-item {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-  padding: 8px 14px;
-  font-size: 12.5px;
+  gap: 6px;
+  padding: 5px 12px;
+  font-size: 12px;
   font-weight: 500;
   color: var(--color-text-muted);
   background-color: transparent;
@@ -511,24 +604,37 @@ button.rarus-nav-item.active,
 }
 
 /* ==========================================================================
-   KPI CARDS
+   KPI CARDS & BANNERS RESPONSIVOS
    ========================================================================== */
 .rarus-kpi-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
-  gap: 16px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
   width: 100%;
+}
+
+@media (max-width: 992px) {
+  .rarus-kpi-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 580px) {
+  .rarus-kpi-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 .rarus-kpi-card {
   background-color: var(--color-bg-surface);
   border: 1px solid var(--color-border-subtle);
-  border-radius: var(--radius-lg);
-  padding: 18px 20px;
+  border-radius: var(--radius-md);
+  padding: var(--kpi-padding);
   box-shadow: var(--shadow-card);
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 4px;
+  min-width: 0;
 }
 
 .rarus-kpi-top {
@@ -538,36 +644,43 @@ button.rarus-nav-item.active,
 }
 
 .rarus-kpi-label {
-  font-size: 13px;
+  font-size: var(--kpi-label-size);
   font-weight: 500;
   color: var(--color-text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .rarus-kpi-icon-box {
-  width: 36px;
-  height: 36px;
-  border-radius: var(--radius-md);
+  width: var(--kpi-icon-size);
+  height: var(--kpi-icon-size);
+  border-radius: var(--radius-sm);
   background-color: var(--color-primary-50);
   color: var(--color-primary-500);
   display: flex;
   align-items: center;
   justify-content: center;
+  flex-shrink: 0;
 }
 
 .rarus-kpi-value {
-  font-size: 28px;
+  font-size: var(--kpi-value-size);
   font-weight: 700;
-  line-height: 1.2;
+  line-height: 1.15;
   color: var(--color-text-main);
-  margin-top: 2px;
+  margin-top: 1px;
 }
 
 .rarus-kpi-trend {
-  font-size: 11.5px;
+  font-size: 11px;
   display: inline-flex;
   align-items: center;
   gap: 4px;
   font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .trend-up {
@@ -582,6 +695,18 @@ button.rarus-nav-item.active,
   color: var(--color-text-muted);
 }
 
+/* Banner de Alerta Metrológico Compacto */
+.rarus-alert-banner {
+  background-color: var(--status-danger-bg);
+  border: 1px solid var(--status-danger-text);
+  border-radius: var(--radius-md);
+  padding: 10px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
 /* ==========================================================================
    TABELAS DE DADOS RESPONSIVAS
    ========================================================================== */
@@ -594,14 +719,25 @@ button.rarus-nav-item.active,
   width: 100%;
 }
 
+.rarus-datagrid-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--color-border-subtle);
+  background-color: var(--color-bg-surface);
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
 .rarus-grid-header-tabs {
   display: flex;
   align-items: center;
   flex-shrink: 0;
-  min-height: 48px;
+  min-height: 40px;
   border-bottom: 1px solid var(--color-border-subtle);
-  padding: 0 16px;
-  gap: 16px;
+  padding: 0 14px;
+  gap: 12px;
   background-color: var(--color-bg-surface);
   overflow-x: auto;
   scrollbar-width: none;
@@ -612,8 +748,8 @@ button.rarus-nav-item.active,
 }
 
 .rarus-filter-tab-pill {
-  padding: 12px 4px;
-  font-size: 13px;
+  padding: 8px 4px;
+  font-size: 12.5px;
   font-weight: 500;
   color: var(--color-text-muted);
   border: none;
@@ -623,7 +759,7 @@ button.rarus-nav-item.active,
   white-space: nowrap;
   display: inline-flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   transition: all 0.2s;
 }
 
@@ -636,9 +772,9 @@ button.rarus-nav-item.active,
 .rarus-filter-tab-pill .count {
   background-color: var(--status-neutral-bg);
   color: var(--status-neutral-text);
-  font-size: 11px;
+  font-size: 10.5px;
   font-weight: 600;
-  padding: 1px 6px;
+  padding: 1px 5px;
   border-radius: var(--radius-full);
 }
 
@@ -648,21 +784,21 @@ button.rarus-nav-item.active,
 }
 
 .rarus-grid-toolbar {
-  padding: 12px 16px;
+  padding: 8px 14px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
+  gap: 10px;
   border-bottom: 1px solid var(--color-border-subtle);
   flex-wrap: wrap;
 }
 
 .rarus-filter-toolbar {
-  padding: 14px 18px;
+  padding: 8px 14px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 16px;
+  gap: 12px;
   border-bottom: 1px solid var(--color-border-subtle);
   background-color: var(--color-bg-surface);
   flex-wrap: wrap;
@@ -673,22 +809,22 @@ button.rarus-nav-item.active,
   display: flex;
   align-items: center;
   flex: 1;
-  max-width: 520px;
-  min-width: 280px;
+  max-width: 480px;
+  min-width: 220px;
 }
 
 .rarus-search-box svg {
   position: absolute;
-  left: 12px;
+  left: 10px;
   color: var(--color-text-muted);
   pointer-events: none;
 }
 
 .rarus-search-box input {
   width: 100%;
-  height: 38px;
-  padding: 8px 12px 8px 36px;
-  font-size: 13.5px;
+  height: var(--form-input-height);
+  padding: 6px 10px 6px 30px;
+  font-size: var(--table-font-size);
   border: 1px solid var(--color-border-input);
   border-radius: var(--radius-md);
   background-color: var(--color-bg-surface);
@@ -699,7 +835,7 @@ button.rarus-nav-item.active,
 
 .rarus-search-box input:focus {
   border-color: var(--color-primary-500);
-  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.15);
 }
 
 .rarus-search-panel {
@@ -710,12 +846,12 @@ button.rarus-nav-item.active,
 .rarus-inline-search {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   background-color: var(--color-bg-surface);
   border: 1px solid var(--color-border-input);
   border-radius: var(--radius-sm);
-  padding: 6px 12px;
-  width: 320px;
+  padding: 4px 10px;
+  width: 280px;
   max-width: 100%;
 }
 
@@ -723,7 +859,7 @@ button.rarus-nav-item.active,
   border: none;
   outline: none;
   width: 100%;
-  font-size: 13px;
+  font-size: 12px;
   color: var(--color-text-main);
   background: transparent;
 }
@@ -740,7 +876,7 @@ button.rarus-nav-item.active,
 
 .table-responsive::-webkit-scrollbar,
 .rarus-table-container::-webkit-scrollbar {
-  height: 6px;
+  height: 5px;
 }
 
 .table-responsive::-webkit-scrollbar-track,
@@ -762,14 +898,13 @@ button.rarus-nav-item.active,
 
 .rarus-table {
   width: 100%;
-  min-width: 780px;
   border-collapse: collapse;
   text-align: left;
 }
 
 .rarus-table th {
-  padding: 11px 16px;
-  font-size: 11.5px;
+  padding: var(--table-cell-padding-y) var(--table-cell-padding-x);
+  font-size: var(--table-header-font-size);
   font-weight: 700;
   color: var(--color-text-muted);
   text-transform: uppercase;
@@ -780,8 +915,8 @@ button.rarus-nav-item.active,
 }
 
 .rarus-table td {
-  padding: 12px 16px;
-  font-size: 13px;
+  padding: var(--table-cell-padding-y) var(--table-cell-padding-x);
+  font-size: var(--table-font-size);
   color: var(--color-text-main);
   border-bottom: 1px solid var(--color-border-subtle);
   vertical-align: middle;
@@ -799,7 +934,7 @@ button.rarus-nav-item.active,
 
 .rarus-table tbody tr.rarus-row-selected {
   background-color: #EFF6FF !important;
-  box-shadow: inset 4px 0 0 #2563EB;
+  box-shadow: inset 3px 0 0 #2563EB;
 }
 
 .rarus-table tbody tr.rarus-row-selected td {
@@ -905,18 +1040,18 @@ button.rarus-nav-item.active,
 }
 
 .card-header {
-  padding: 16px 20px;
+  padding: 10px 16px;
   border-bottom: 1px solid var(--color-border-subtle);
   display: flex;
   justify-content: space-between;
   align-items: center;
   background-color: var(--color-bg-surface);
   flex-wrap: wrap;
-  gap: 10px;
+  gap: 8px;
 }
 
 .card-title {
-  font-size: 18px;
+  font-size: 16px;
   font-weight: 600;
   color: var(--color-text-main);
   margin: 0;
@@ -924,11 +1059,11 @@ button.rarus-nav-item.active,
 
 /* Barra de Ações Rápidas */
 .action-bar {
-  padding: 10px 20px;
+  padding: 6px 14px;
   background-color: #FAFAFA;
   border-bottom: 1px solid var(--color-border-subtle);
   display: flex;
-  gap: 8px;
+  gap: 6px;
   align-items: center;
   flex-wrap: wrap;
 }
@@ -938,8 +1073,8 @@ button.rarus-nav-item.active,
   display: flex;
   border-bottom: 1px solid var(--color-border-subtle);
   background-color: var(--color-bg-surface);
-  padding: 0 20px;
-  gap: 16px;
+  padding: 0 14px;
+  gap: 12px;
   overflow-x: auto;
   scrollbar-width: none;
   -ms-overflow-style: none;
@@ -952,8 +1087,8 @@ button.rarus-nav-item.active,
 }
 
 .tab-button {
-  padding: 12px 4px;
-  font-size: 13.5px;
+  padding: 8px 4px;
+  font-size: 12.5px;
   font-weight: 500;
   color: var(--color-text-muted);
   border: none;
@@ -976,16 +1111,16 @@ button.rarus-nav-item.active,
 
 /* Corpo do Formulário */
 .card-body {
-  padding: 20px;
+  padding: var(--card-padding);
   overflow-y: auto;
-  max-height: calc(85vh - 220px);
+  max-height: calc(100vh - 200px);
 }
 
 /* Grid de 12 Colunas Responsivo */
 .form-grid {
   display: grid;
   grid-template-columns: repeat(12, 1fr);
-  gap: 14px;
+  gap: 10px;
 }
 
 .col-1 { grid-column: span 1; }
@@ -1020,11 +1155,11 @@ button.rarus-nav-item.active,
 .form-group {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 3px;
 }
 
 .form-label {
-  font-size: 12.5px;
+  font-size: var(--form-label-font-size);
   font-weight: 600;
   color: var(--color-text-label);
 }
@@ -1033,8 +1168,9 @@ button.rarus-nav-item.active,
 .form-select,
 .form-textarea {
   width: 100%;
-  padding: 8px 12px;
-  font-size: 13px;
+  height: var(--form-input-height);
+  padding: var(--form-input-padding);
+  font-size: var(--table-font-size);
   font-family: var(--font-family);
   color: var(--color-text-main);
   background-color: var(--color-bg-surface);
@@ -1054,14 +1190,15 @@ button.rarus-nav-item.active,
 
 .form-textarea {
   resize: vertical;
-  min-height: 80px;
+  min-height: 60px;
+  height: auto;
 }
 
 .form-input:focus,
 .form-select:focus,
 .form-textarea:focus {
   border-color: var(--color-primary-500) !important;
-  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15) !important;
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.15) !important;
 }
 
 .input-with-icon {
@@ -1071,12 +1208,12 @@ button.rarus-nav-item.active,
 }
 
 .input-with-icon .form-input {
-  padding-right: 36px;
+  padding-right: 32px;
 }
 
 .input-icon-btn {
   position: absolute;
-  right: 8px;
+  right: 6px;
   background: none;
   border: none;
   color: var(--color-text-muted);
@@ -1084,7 +1221,7 @@ button.rarus-nav-item.active,
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 4px;
+  padding: 3px;
 }
 
 .input-icon-btn:hover {
@@ -1095,16 +1232,16 @@ button.rarus-nav-item.active,
    BOTÕES DO SISTEMA
    ========================================================================== */
 .btn {
-  height: 34px;
-  padding: 0 14px;
-  font-size: 13px;
+  height: var(--btn-height);
+  padding: var(--btn-padding);
+  font-size: var(--btn-font-size);
   font-weight: 500;
   border-radius: var(--radius-md);
   border: 1px solid transparent;
   cursor: pointer;
   display: inline-flex;
   align-items: center;
-  gap: 7px;
+  gap: 6px;
   transition: background-color 0.15s, border-color 0.15s;
   white-space: nowrap;
   -webkit-appearance: none;
@@ -1156,46 +1293,46 @@ button.rarus-nav-item.active,
 
 /* Seções e Agrupamentos Visuais */
 .form-section-title {
-  font-size: 13.5px;
+  font-size: 12.5px;
   font-weight: 600;
   color: var(--color-text-main);
-  margin: 8px 0 4px 0;
+  margin: 6px 0 2px 0;
   grid-column: span 12;
   border-bottom: 1px solid var(--color-border-subtle);
-  padding-bottom: 6px;
+  padding-bottom: 4px;
 }
 
 .checkbox-group {
   display: flex;
   align-items: center;
-  gap: 8px;
-  margin-top: 4px;
+  gap: 6px;
+  margin-top: 3px;
 }
 
 .checkbox-group input[type="checkbox"] {
-  width: 16px;
-  height: 16px;
+  width: 15px;
+  height: 15px;
   accent-color: var(--color-primary-500);
   cursor: pointer;
 }
 
 .checkbox-group label {
-  font-size: 13px;
+  font-size: 12.5px;
   color: var(--color-text-main);
   cursor: pointer;
 }
 
 /* Rodapé com Auditoria */
 .card-footer {
-  padding: 10px 20px;
+  padding: 8px 14px;
   background-color: var(--color-primary-50);
   border-top: 1px solid var(--color-border-subtle);
   display: flex;
   justify-content: space-between;
-  font-size: 11.5px;
+  font-size: 11px;
   color: var(--color-text-muted);
   flex-wrap: wrap;
-  gap: 8px;
+  gap: 6px;
 }
 
 /* Modais */
@@ -1208,7 +1345,7 @@ button.rarus-nav-item.active,
   align-items: center;
   justify-content: center;
   z-index: 999;
-  padding: 16px;
+  padding: 14px;
 }
 
 .rarus-modal-box {
@@ -1229,22 +1366,22 @@ button.rarus-nav-item.active,
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 4px;
+  margin-bottom: 0;
   flex-wrap: wrap;
-  gap: 12px;
+  gap: 8px;
 }
 
 .rarus-page-title-group h1 {
-  font-size: 22px;
+  font-size: 18px;
   font-weight: 600;
   color: var(--color-text-main);
-  line-height: 1.3;
+  line-height: 1.25;
 }
 
 .rarus-page-title-group p {
-  font-size: 13px;
+  font-size: 12px;
   color: var(--color-text-muted);
-  margin-top: 2px;
+  margin-top: 1px;
 }
 
 /* Responsividade Global para Telas Pequenas e Tablets */
@@ -1339,6 +1476,26 @@ button.rarus-nav-item.active,
   padding: 24px;
   overflow-y: auto;
   max-height: 750px;
+}
+
+@media (max-width: 1440px), (max-height: 860px) {
+  .rarus-split-editor {
+    min-height: 480px;
+    gap: 12px;
+  }
+  .rarus-code-pane {
+    padding: 12px 14px;
+    gap: 8px;
+  }
+  .rarus-code-textarea {
+    min-height: 380px;
+    padding: 10px 12px;
+    font-size: 11.5px;
+  }
+  .rarus-preview-pane {
+    padding: 16px;
+    max-height: 580px;
+  }
 }
 
 /* Customização Swagger UI para integrar com o Design System RARUS */

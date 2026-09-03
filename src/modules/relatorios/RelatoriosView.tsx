@@ -380,7 +380,7 @@ export const RelatoriosView: React.FC = () => {
   const modelosEstoque = modelos.filter((m) => m.categoria === 'Estoque').length;
 
   return (
-    <div className="rarus-content-scroll" style={{ padding: '20px 24px', maxWidth: '1600px', margin: '0 auto' }}>
+    <div className="rarus-content-scroll">
       {/* CABEÇALHO DA PÁGINA (DESIGN SYSTEM) */}
       <div
         style={{
